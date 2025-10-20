@@ -1,5 +1,10 @@
 node_modules
 .env
+
+# Google Drive API credentials (NEVER commit these!)
+credentials.json
+token.json
+temp_downloads/
 dist
 logs
 *.log

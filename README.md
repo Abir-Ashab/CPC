@@ -17,6 +17,9 @@ A full-stack photo upload application with anonymous gallery viewing. Users can 
 - 🖼️ Anonymous photo gallery
 - 🗑️ Photo deletion
 - 🐳 Fully containerized with Docker
+- 🔄 **Google Form Integration** - Automated bulk sync from Google Form submissions
+- 📊 **Participant Metadata** - Store and track participant information (email, name, Slack ID, team, captions)
+- 🔍 **Duplicate Prevention** - Automatically skips participants already in database
 
 ## Project Structure
 
@@ -89,60 +92,40 @@ npm run dev
 
 Make sure MongoDB and MinIO are running locally or update the environment variables.
 
-## Environment Variables
+## Google Form Integration (Automated Photo Sync)
 
-### Backend (.env)
-```
-PORT=4000
-MONGODB_URI=mongodb://mongo:27017/photo-upload-db
-MINIO_ENDPOINT=minio
-MINIO_PORT=9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET_NAME=photos
-MINIO_USE_SSL=false
-```
+Automatically sync photos and participant data from Google Form submissions!
 
-### Frontend (.env.local)
-```
-BACKEND_URL=http://localhost:4000
-```
+### Setup (One-time)
 
-## API Documentation
+1. **Get Google API Credentials:**
+   - Go to https://console.cloud.google.com/
+   - Enable **Google Drive API** and **Google Sheets API**
+   - Create OAuth 2.0 credentials (Desktop app)
+   - Download as `backend/credentials.json`
 
-See [backend/README.md](backend/README.md) for detailed API documentation.
+2. **Run the sync:**
+   ```bash
+   cd backend
+   npm run google-form-sync
+   ```
 
-## How It Works
+3. **First time:** Authorize with Google and enter your form's Spreadsheet ID
 
-1. **Upload Flow**:
-   - User selects a photo and enters their name
-   - Frontend sends the photo to `/api/upload`
-   - Frontend API proxies to backend `/photos/upload`
-   - Backend saves file to MinIO and metadata to MongoDB
-   - Metadata includes uploader name but it's not exposed in the gallery
+### Form Structure
 
-2. **Gallery Flow**:
-   - Frontend fetches photos from `/api/photos`
-   - Backend retrieves metadata from MongoDB
-   - Returns photo list WITHOUT uploader information (anonymous)
-   - Generates presigned URLs for MinIO access
+Your Google Form should collect:
+- ✅ Email (automatic from Google account)
+- ✅ Name (according to HR Portal)
+- ✅ Slack ID (according to HR Portal)
+- ✅ Team Name
+- ✅ Caption for Photo 1, 2, 3
+- ✅ File uploads (up to 5 images)
 
-3. **Delete Flow**:
-   - User clicks delete on a photo
-   - Request goes to `/api/photos/:id`
-   - Backend deletes from both MinIO and MongoDB
+### Features
 
-## Notes
-
-- Photos are displayed anonymously (uploader name is stored but not shown)
-- Currently manual upload only (as requested)
-- MinIO presigned URLs expire after 24 hours
-- All photo metadata is stored in MongoDB for future enhancements
-
-## Future Enhancements
-
-- User authentication
-- Photo categories/tags
-- Photo search functionality
-- Pagination for large galleries
-- Image optimization/thumbnails
+- 🔄 **Automatic sync** - Downloads photos from Google Drive
+- � **Complete metadata** - Saves all participant information
+- � **Duplicate prevention** - Skips participants already in database
+- � **Progress tracking** - Shows real-time upload status
+- 🛡️ **Error handling** - Continues on failures, reports summary

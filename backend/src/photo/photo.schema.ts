@@ -18,6 +18,21 @@ export class Photo {
   uploadedBy: string;
 
   @Prop()
+  participantEmail: string;
+
+  @Prop()
+  participantName: string;
+
+  @Prop()
+  participantSlackId: string;
+
+  @Prop()
+  participantTeam: string;
+
+  @Prop()
+  caption: string;
+
+  @Prop()
   contentType: string;
 
   @Prop()

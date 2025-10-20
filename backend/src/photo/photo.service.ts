@@ -15,28 +15,34 @@ export class PhotoService {
   async uploadPhoto(
     file: Express.Multer.File,
     uploadedBy: string,
-    photoName: string,
+    photoName?: string,
+    participantInfo?: {
+      email?: string;
+      name?: string;
+      slackId?: string;
+      team?: string;
+      caption?: string;
+    },
   ): Promise<Photo> {
-    // Generate unique filename
     const fileExtension = file.originalname.split('.').pop();
     const fileName = `${uuidv4()}.${fileExtension}`;
-
-    // Upload to MinIO
     await this.minioService.uploadFile(
       fileName,
       file.buffer,
       file.mimetype,
     );
-
-    // Get presigned URL
     const url = await this.minioService.getFileUrl(fileName);
 
-    // Save metadata to MongoDB
     const photo = new this.photoModel({
       name: photoName || file.originalname,
       fileName: fileName,
       url: url,
       uploadedBy: uploadedBy,
+      participantEmail: participantInfo?.email,
+      participantName: participantInfo?.name,
+      participantSlackId: participantInfo?.slackId,
+      participantTeam: participantInfo?.team,
+      caption: participantInfo?.caption,
       contentType: file.mimetype,
       size: file.size,
       uploadedAt: new Date(),
@@ -51,7 +57,6 @@ export class PhotoService {
       .sort({ uploadedAt: -1 })
       .exec();
 
-    // Return photos without uploadedBy info (anonymous)
     return await Promise.all(
       photos.map(async (photo) => {
         const url = await this.minioService.getFileUrl(photo.fileName);
@@ -65,16 +70,21 @@ export class PhotoService {
     );
   }
 
+  async checkParticipantExists(email: string): Promise<boolean> {
+    const count = await this.photoModel.countDocuments({ participantEmail: email });
+    return count > 0;
+  }
+
+  async getParticipantPhotoCount(email: string): Promise<number> {
+    return await this.photoModel.countDocuments({ participantEmail: email });
+  }
+
   async deletePhoto(id: string): Promise<void> {
     const photo = await this.photoModel.findById(id);
     if (!photo) {
       throw new Error('Photo not found');
     }
-
-    // Delete from MinIO
     await this.minioService.deleteFile(photo.fileName);
-
-    // Delete from database
     await this.photoModel.findByIdAndDelete(id);
   }
 }

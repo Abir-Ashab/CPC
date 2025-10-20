@@ -20,7 +20,7 @@ export class AuthService {
   }
 
   getTokens(user: User) {
-    const payload = { sub: user._id, email: user.email };
+    const payload = { sub: user._id, email: user.email, role: user.role };
 
     const accessToken = this.jwtService.sign(payload, {
       secret: envVars.JWT.JWT_SECRET,

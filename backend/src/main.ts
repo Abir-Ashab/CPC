@@ -1,4 +1,5 @@
 import { NestFactory, Reflector } from "@nestjs/core";
+import * as cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "./pipes/validation.pipe";
 import { envVars } from "./config/env";
@@ -11,6 +12,7 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
+  app.use(cookieParser());
 
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new GlobalExceptionFilter());

@@ -1,18 +1,21 @@
 import { Controller, Get, Param, Patch, Body, Post } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { User } from "./schema/user.schema";
-import { UpdateUserDto } from "./dto/user.dto";
+import { Role, UpdateUserDto } from "./dto/user.dto";
+import { Auth } from "../auth/decorators/auth.decorator";
 
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
+  @Auth(Role.ADMIN)
   async createUser(@Body() createUserDto: any): Promise<User> {
     return this.usersService.createUser(createUserDto);
   }
 
   @Get()
+  @Auth(Role.ADMIN)
   async getAllUsers(): Promise<User[]> {
     return this.usersService.findAll();
   }

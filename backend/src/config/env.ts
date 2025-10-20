@@ -12,6 +12,15 @@ interface EnvConfig {
     MINIO_BUCKET_NAME: string;
     MINIO_USE_SSL: string;
   };
+  GOOGLE_CLIENT: {
+    GOOGLE_CLIENT_ID: string;
+    GOOGLE_CLIENT_SECRET: string;
+    GOOGLE_CALLBACK_URL: string;
+  };
+  JWT: {
+    JWT_SECRET: string;
+    JWT_REFRESH_SECRET: string;
+  };
 }
 
 const loadEnvVariables = (): EnvConfig => {
@@ -24,6 +33,11 @@ const loadEnvVariables = (): EnvConfig => {
     "MINIO_SECRET_KEY",
     "MINIO_BUCKET_NAME",
     "MINIO_USE_SSL",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "GOOGLE_CALLBACK_URL",
+    "JWT_SECRET",
+    "JWT_REFRESH_SECRET",
   ];
 
   requiredEnvVaribales.forEach((key) => {
@@ -42,6 +56,15 @@ const loadEnvVariables = (): EnvConfig => {
       MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY as string,
       MINIO_BUCKET_NAME: process.env.MINIO_BUCKET_NAME as string,
       MINIO_USE_SSL: process.env.MINIO_USE_SSL as string,
+    },
+    GOOGLE_CLIENT: {
+      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+      GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL,
+    },
+    JWT: {
+      JWT_SECRET: process.env.JWT_SECRET,
+      JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
     },
   };
 };

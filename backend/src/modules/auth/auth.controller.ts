@@ -1,69 +1,70 @@
-import { Controller, Get, Req, Res, UseGuards, Post } from "@nestjs/common";
+import { Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
-import { AuthService } from "./auth.service";
 import { Response, Request } from "express";
-import { JwtAuthDto } from "./dto/auth.dto";
+import { AuthService } from "./auth.service";
 
 @Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // --- Google OAuth login ---
   @Get("google")
   @UseGuards(AuthGuard("google"))
   async googleAuth() {}
 
-  // --- Google OAuth callback ---
   @Get("google/callback")
   @UseGuards(AuthGuard("google"))
   async googleAuthRedirect(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<JwtAuthDto> {
-    const tokens = await this.authService.getTokens(req.user as any);
+  ) {
+    const user = req.user as any;
+    const tokens = this.authService.getTokens(user);
 
-    res.cookie("Access", tokens.accessToken, {
+    res.cookie("refreshToken", tokens.refreshToken, {
       httpOnly: true,
-      maxAge: 15 * 60 * 1000,
-    });
-    res.cookie("Refresh", tokens.refreshToken, {
-      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return tokens;
+    res.cookie("accessToken", tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 15 * 60 * 60 * 1000,
+    });
+
+    return { accessToken: tokens.accessToken, user };
   }
 
-  // --- Refresh tokens ---
   @Post("refresh")
   @UseGuards(AuthGuard("jwt-refresh"))
-  async refreshTokens(
+  async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     const user = req.user as any;
-    const tokens = await this.authService.refreshTokens(user);
+    const tokens = this.authService.refreshTokens(user);
 
-    res.cookie("Access", tokens.accessToken, {
+    res.cookie("refreshToken", tokens.refreshToken, {
       httpOnly: true,
-      maxAge: 15 * 60 * 1000,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    return tokens;
+
+    return { accessToken: tokens.accessToken };
   }
 
-  // --- Logout ---
-  @Post("logout")
-  async logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie("Access");
-    res.clearCookie("Refresh");
-    return { message: "Logged out successfully" };
-  }
-
-  // --- Current user info ---
   @Get("me")
   @UseGuards(AuthGuard("jwt"))
-  getMe(@Req() req: Request) {
-    // req.user is set by JwtStrategy
+  async getMe(@Req() req: Request) {
     return req.user;
+  }
+
+  @Get("logout")
+  async logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie("refreshToken");
+    return { message: "Logged out successfully" };
   }
 }

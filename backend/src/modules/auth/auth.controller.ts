@@ -10,6 +10,8 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { Response, Request } from "express";
 import { AuthService } from "./auth.service";
+import { Role } from "../users/dto/user.dto";
+import { Auth } from "./decorators/auth.decorator";
 
 @Controller("auth")
 export class AuthController {
@@ -87,8 +89,11 @@ export class AuthController {
   @Get("me")
   @UseGuards(AuthGuard("jwt"))
   async getMe(@Req() req: Request) {
-    if (!req.user) throw new UnauthorizedException("User not authenticated");
-    return req.user;
+    const userPayload = req.user as any;
+    if (!userPayload) throw new UnauthorizedException("User not authenticated");
+
+    const fullUser = await this.authService.getUserById(userPayload.id);
+    return fullUser;
   }
 
   @Get("logout")

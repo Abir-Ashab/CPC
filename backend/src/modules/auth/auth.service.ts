@@ -19,6 +19,11 @@ export class AuthService {
     return user;
   }
 
+  async getUserById(id: string) {
+    return this.usersService.findById(id);
+  }
+
+
   getTokens(user: User) {
     const payload = { sub: user._id, email: user.email, role: user.role };
 

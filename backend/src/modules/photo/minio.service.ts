@@ -25,7 +25,6 @@ export class MinioService {
       if (!bucketExists) {
         await this.minioClient.makeBucket(this.bucketName, "us-east-1");
 
-        // Set public read policy
         const policy = {
           Version: "2012-10-17",
           Statement: [
@@ -68,7 +67,7 @@ export class MinioService {
     return await this.minioClient.presignedGetObject(
       this.bucketName,
       fileName,
-      24 * 60 * 60, // 24 hours
+      24 * 60 * 60, 
     );
   }
 

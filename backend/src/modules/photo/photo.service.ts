@@ -1,9 +1,9 @@
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { Photo, PhotoDocument } from "./photo.schema";
-import { MinioService } from "./minio.service";
-import { v4 as uuidv4 } from "uuid";
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Photo, PhotoDocument } from './photo.schema';
+import { MinioService } from './minio.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class PhotoService {
@@ -15,24 +15,34 @@ export class PhotoService {
   async uploadPhoto(
     file: Express.Multer.File,
     uploadedBy: string,
-    photoName: string,
+    photoName?: string,
+    participantInfo?: {
+      email?: string;
+      name?: string;
+      slackId?: string;
+      team?: string;
+      caption?: string;
+    },
   ): Promise<Photo> {
-    // Generate unique filename
-    const fileExtension = file.originalname.split(".").pop();
+    const fileExtension = file.originalname.split('.').pop();
     const fileName = `${uuidv4()}.${fileExtension}`;
-
-    // Upload to MinIO
-    await this.minioService.uploadFile(fileName, file.buffer, file.mimetype);
-
-    // Get presigned URL
+    await this.minioService.uploadFile(
+      fileName,
+      file.buffer,
+      file.mimetype,
+    );
     const url = await this.minioService.getFileUrl(fileName);
 
-    // Save metadata to MongoDB
     const photo = new this.photoModel({
       name: photoName || file.originalname,
       fileName: fileName,
       url: url,
       uploadedBy: uploadedBy,
+      participantEmail: participantInfo?.email,
+      participantName: participantInfo?.name,
+      participantSlackId: participantInfo?.slackId,
+      participantTeam: participantInfo?.team,
+      caption: participantInfo?.caption,
       contentType: file.mimetype,
       size: file.size,
       uploadedAt: new Date(),
@@ -42,9 +52,11 @@ export class PhotoService {
   }
 
   async getAllPhotos(): Promise<any[]> {
-    const photos = await this.photoModel.find().sort({ uploadedAt: -1 }).exec();
+    const photos = await this.photoModel
+      .find()
+      .sort({ uploadedAt: -1 })
+      .exec();
 
-    // Return photos without uploadedBy info (anonymous)
     return await Promise.all(
       photos.map(async (photo) => {
         const url = await this.minioService.getFileUrl(photo.fileName);
@@ -53,21 +65,31 @@ export class PhotoService {
           name: photo.name,
           url: url,
           uploadedAt: photo.uploadedAt,
+          voteCount: photo.voteCount || 0,
+          isWinner: photo.isWinner || false,
+          winnerPosition: photo.winnerPosition,
+          participantName: photo.participantName,
+          participantEmail: photo.participantEmail,
         };
       }),
     );
   }
 
+  async checkParticipantExists(email: string): Promise<boolean> {
+    const count = await this.photoModel.countDocuments({ participantEmail: email });
+    return count > 0;
+  }
+
+  async getParticipantPhotoCount(email: string): Promise<number> {
+    return await this.photoModel.countDocuments({ participantEmail: email });
+  }
+
   async deletePhoto(id: string): Promise<void> {
     const photo = await this.photoModel.findById(id);
     if (!photo) {
-      throw new Error("Photo not found");
+      throw new Error('Photo not found');
     }
-
-    // Delete from MinIO
     await this.minioService.deleteFile(photo.fileName);
-
-    // Delete from database
     await this.photoModel.findByIdAndDelete(id);
   }
 }

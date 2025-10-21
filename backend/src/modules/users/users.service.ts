@@ -1,13 +1,17 @@
 import { Injectable } from "@nestjs/common";
 import { UsersRepository } from "./users.repository";
 import { User } from "./schema/user.schema";
-import { CreateUserDto, UpdateUserDto } from "./dto/user.dto";
+import { CreateUserDto, UpdateUserDto, Role } from "./dto/user.dto";
 
 @Injectable()
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
+    // Set admin role for super admin email
+    if (createUserDto.email === 'abir.ashab@cefalo.com') {
+      createUserDto.role = Role.ADMIN;
+    }
     return this.usersRepository.create(createUserDto);
   }
 

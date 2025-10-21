@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
 
 export type PhotoDocument = Photo & Document;
 
@@ -18,6 +18,21 @@ export class Photo {
   uploadedBy: string;
 
   @Prop()
+  participantEmail: string;
+
+  @Prop()
+  participantName: string;
+
+  @Prop()
+  participantSlackId: string;
+
+  @Prop()
+  participantTeam: string;
+
+  @Prop()
+  caption: string;
+
+  @Prop()
   contentType: string;
 
   @Prop()
@@ -25,6 +40,15 @@ export class Photo {
 
   @Prop({ default: Date.now })
   uploadedAt: Date;
+
+  @Prop({ default: 0 })
+  voteCount: number;
+
+  @Prop({ default: false })
+  isWinner: boolean;
+
+  @Prop()
+  winnerPosition?: number; // 1, 2, or 3 for first, second, third place
 }
 
 export const PhotoSchema = SchemaFactory.createForClass(Photo);

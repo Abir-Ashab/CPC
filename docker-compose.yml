@@ -43,10 +43,10 @@ services:
       dockerfile: Dockerfile
     container_name: photo-backend
     ports:
-      - "4000:4000"
+      - "5000:5000"
     environment:
-      - PORT=4000
-      - MONGODB_URI=mongodb://mongo:27017/photo-upload-db
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongo:27017/cpc-db
       - MINIO_ENDPOINT=minio
       - MINIO_PORT=9000
       - MINIO_ACCESS_KEY=minioadmin
@@ -70,7 +70,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - BACKEND_URL=http://backend:4000
+      - BACKEND_URL=http://backend:5000
     depends_on:
       - backend
     networks:

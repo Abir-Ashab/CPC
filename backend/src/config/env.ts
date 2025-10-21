@@ -4,6 +4,7 @@ dotenv.config();
 interface EnvConfig {
   PORT: string;
   MONGODB_URI: string;
+  FRONTEND_URL: string;
   MINIO: {
     MINIO_ENDPOINT: string;
     MINIO_PORT: string;
@@ -27,6 +28,7 @@ const loadEnvVariables = (): EnvConfig => {
   const requiredEnvVaribales = [
     "PORT",
     "MONGODB_URI",
+    "FRONTEND_URL",
     "MINIO_ENDPOINT",
     "MINIO_PORT",
     "MINIO_ACCESS_KEY",
@@ -49,6 +51,7 @@ const loadEnvVariables = (): EnvConfig => {
   return {
     PORT: process.env.PORT as string,
     MONGODB_URI: process.env.MONGODB_URI as string,
+    FRONTEND_URL: process.env.FRONTEND_URL as string,
     MINIO: {
       MINIO_ENDPOINT: process.env.MINIO_ENDPOINT as string,
       MINIO_PORT: process.env.MINIO_PORT as string,

@@ -48,7 +48,12 @@ export class AuthController {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
-      return { message: "Login successful", user };
+      const redirectUrl =
+        user.role === "ADMIN"
+          ? process.env.FRONTEND_URL + "/admin"
+          : process.env.FRONTEND_URL + "/voting";
+
+      return res.redirect(redirectUrl);
     } catch (err) {
       throw new UnauthorizedException("Google callback failed");
     }

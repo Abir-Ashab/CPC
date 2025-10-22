@@ -15,6 +15,7 @@ export default function Login() {
         login, 
         fetchUser, 
         clearError,
+        reset,
         isAdmin 
     } = useAuthStore();
     const router = useRouter();
@@ -22,7 +23,6 @@ export default function Login() {
     const [isRedirecting, setIsRedirecting] = useState(false);
 
     useEffect(() => {
-        // Try to fetch user on component mount
         if (!isAuthenticated && !user) {
             fetchUser();
         }

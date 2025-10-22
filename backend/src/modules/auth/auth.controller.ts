@@ -10,8 +10,6 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { Response, Request } from "express";
 import { AuthService } from "./auth.service";
-import { Role } from "../users/dto/user.dto";
-import { Auth } from "./decorators/auth.decorator";
 
 @Controller("auth")
 export class AuthController {
@@ -19,7 +17,17 @@ export class AuthController {
 
   @Get("google")
   @UseGuards(AuthGuard("google"))
-  async googleAuth() {}
+  async googleAuth(@Req() req: Request, @Res() res: Response) {
+    const redirectParam = req.query.redirect as string;
+    if (redirectParam) {
+      res.cookie('oauth_redirect', redirectParam, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 10 * 60 * 1000, 
+      });
+    }
+  }
 
   @Get("google/callback")
   @UseGuards(AuthGuard("google"))
@@ -38,7 +46,7 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 15 * 60 * 1000, // 15 minutes
+        maxAge: 15 * 60 * 1000, 
       });
 
       res.cookie("refreshToken", tokens.refreshToken, {
@@ -48,13 +56,23 @@ export class AuthController {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
-      const redirectUrl =
-        user.role === "ADMIN"
-          ? process.env.FRONTEND_URL + "/admin"
-          : process.env.FRONTEND_URL + "/voting";
+      const redirectParam = req.cookies.oauth_redirect;
+      let redirectUrl: string;
 
+      if (redirectParam && redirectParam.startsWith(process.env.FRONTEND_URL)) {
+        redirectUrl = redirectParam;
+        res.clearCookie('oauth_redirect');
+      } else {
+        redirectUrl =
+          user.role === "ADMIN"
+            ? process.env.FRONTEND_URL + "/admin"
+            : process.env.FRONTEND_URL + "/voting";
+      }
+
+      console.log("Redirecting user after auth to:", redirectUrl);
       return res.redirect(redirectUrl);
     } catch (err) {
+      console.error("Google callback error:", err);
       throw new UnauthorizedException("Google callback failed");
     }
   }
@@ -97,7 +115,7 @@ export class AuthController {
     const userPayload = req.user as any;
     if (!userPayload) throw new UnauthorizedException("User not authenticated");
 
-    const fullUser = await this.authService.getUserById(userPayload.id);
+    const fullUser = await this.authService.getUserById(userPayload._id);
     return fullUser;
   }
 

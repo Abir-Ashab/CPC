@@ -6,6 +6,7 @@ import { Photo, PhotoDocument } from '../photo/photo.schema';
 import { VotingSettings, VotingSettingsDocument } from './voting-settings.schema';
 import { User } from '../users/schema/user.schema';
 import { Role } from '../users/dto/user.dto';
+import { MinioService } from '../photo/minio.service';
 
 @Injectable()
 export class VotingService {
@@ -13,6 +14,7 @@ export class VotingService {
     @InjectModel(Vote.name) private voteModel: Model<VoteDocument>,
     @InjectModel(Photo.name) private photoModel: Model<PhotoDocument>,
     @InjectModel(VotingSettings.name) private votingSettingsModel: Model<VotingSettingsDocument>,
+    private minioService: MinioService,
   ) {}
 
   async getVotingSettings(): Promise<VotingSettingsDocument> {
@@ -82,13 +84,15 @@ export class VotingService {
       throw new NotFoundException('Photo not found');
     }
 
-    // Check if user has already voted
+    if (!user || !user._id) {
+      throw new BadRequestException('User authentication required');
+    }
+
     const existingVote = await this.voteModel.findOne({ userId: user._id });
     if (existingVote) {
       throw new BadRequestException('You have already voted');
     }
 
-    // Create the vote
     await this.voteModel.create({
       photoId: new Types.ObjectId(photoId),
       userId: user._id,
@@ -96,7 +100,6 @@ export class VotingService {
       votedAt: new Date(),
     });
 
-    // Update photo vote count
     await this.photoModel.findByIdAndUpdate(photoId, {
       $inc: { voteCount: 1 }
     });
@@ -123,18 +126,23 @@ export class VotingService {
       this.getVotingSettings(),
     ]);
 
-    return {
-      totalVotes,
-      totalPhotos: photosWithVotes.length,
-      photosWithVotes: photosWithVotes.map(photo => ({
+    const photosWithRegeneratedUrls = await Promise.all(
+      photosWithVotes.map(async (photo) => ({
         id: photo._id,
         name: photo.name,
+        url: await this.minioService.getFileUrl(photo.fileName),
         voteCount: photo.voteCount,
         participantName: photo.participantName,
         participantEmail: photo.participantEmail,
         isWinner: photo.isWinner,
         winnerPosition: photo.winnerPosition,
-      })),
+      }))
+    );
+
+    return {
+      totalVotes,
+      totalPhotos: photosWithVotes.length,
+      photosWithVotes: photosWithRegeneratedUrls,
       votingSettings: settings,
     };
   }
@@ -148,13 +156,11 @@ export class VotingService {
       throw new BadRequestException('Must declare exactly 3 winners');
     }
 
-    // Reset all photos to not be winners
     await this.photoModel.updateMany({}, {
       isWinner: false,
       winnerPosition: undefined
     });
 
-    // Set the winners
     for (let i = 0; i < winnerIds.length; i++) {
       await this.photoModel.findByIdAndUpdate(winnerIds[i], {
         isWinner: true,
@@ -162,7 +168,6 @@ export class VotingService {
       });
     }
 
-    // Update voting settings
     await this.updateVotingSettings(user, {
       winners: winnerIds,
       resultsPublished: true,
@@ -178,14 +183,16 @@ export class VotingService {
     const winners = await this.photoModel.find({ isWinner: true })
       .sort({ winnerPosition: 1 });
 
-    return winners.map(photo => ({
-      id: photo._id,
-      name: photo.name,
-      url: photo.url,
-      voteCount: photo.voteCount,
-      participantName: photo.participantName,
-      participantEmail: photo.participantEmail,
-      winnerPosition: photo.winnerPosition,
-    }));
+    return await Promise.all(
+      winners.map(async (photo) => ({
+        id: photo._id,
+        name: photo.name,
+        url: await this.minioService.getFileUrl(photo.fileName),
+        voteCount: photo.voteCount,
+        participantName: photo.participantName,
+        participantEmail: photo.participantEmail,
+        winnerPosition: photo.winnerPosition,
+      }))
+    );
   }
 }

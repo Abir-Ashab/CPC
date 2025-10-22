@@ -17,14 +17,12 @@ export enum UserRole {
 }
 
 interface AuthState {
-    // State
     user: User | null;
     isLoading: boolean;
     isAuthenticated: boolean;
     error: string | null;
     hasAttemptedFetch: boolean;
 
-    // Actions
     setUser: (user: User | null) => void;
     setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
@@ -34,7 +32,6 @@ interface AuthState {
     clearError: () => void;
     reset: () => void;
 
-    // Computed properties (helpers)
     isAdmin: () => boolean;
     isSuperAdmin: () => boolean;
     canVote: () => boolean;
@@ -44,7 +41,6 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
     persist(
         (set, get) => ({
-            // Initial state
             user: null,
             isLoading: false,
             isAuthenticated: false,
@@ -71,10 +67,21 @@ export const useAuthStore = create<AuthState>()(
             },
 
             login: (redirectUrl?: string) => {
-                if (typeof window === 'undefined') return;
+                if (typeof window === 'undefined') {
+                    return;
+                }
+                set({ 
+                    user: null, 
+                    isAuthenticated: false, 
+                    isLoading: false,
+                    error: null,
+                    hasAttemptedFetch: false
+                });
+                
                 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
                 const redirect = redirectUrl || window.location.href;
-                window.location.href = `${baseUrl}/auth/google?redirect=${encodeURIComponent(redirect)}`;
+                const googleAuthUrl = `${baseUrl}/auth/google?redirect=${encodeURIComponent(redirect)}`;
+                window.location.href = googleAuthUrl;
             },
 
             logout: async () => {
@@ -88,7 +95,6 @@ export const useAuthStore = create<AuthState>()(
                         error: null,
                         hasAttemptedFetch: false 
                     });
-                    // Redirect to home page after logout
                     if (typeof window !== 'undefined') {
                         window.location.href = '/';
                     }
@@ -105,9 +111,10 @@ export const useAuthStore = create<AuthState>()(
             },
 
             fetchUser: async () => {
-                // Prevent multiple simultaneous requests
                 const { isLoading, hasAttemptedFetch } = get();
-                if (isLoading || hasAttemptedFetch) return;
+                if (isLoading && hasAttemptedFetch) {
+                    return;
+                }
 
                 try {
                     set({ isLoading: true, error: null, hasAttemptedFetch: true });
@@ -119,10 +126,8 @@ export const useAuthStore = create<AuthState>()(
                         error: null 
                     });
                 } catch (error: any) {
-                    // Don't show error for 401 (unauthorized) as it's expected when not logged in
                     const is401 = error?.response?.status === 401;
                     const errorMessage = is401 ? null : (error?.response?.data?.message || 'Failed to fetch user');
-                    
                     set({ 
                         user: null, 
                         isAuthenticated: false, 

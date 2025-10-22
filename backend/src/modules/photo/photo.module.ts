@@ -13,6 +13,6 @@ import { Photo, PhotoSchema } from "./photo.schema";
   ],
   controllers: [PhotoController],
   providers: [PhotoService, MinioService],
-  exports: [PhotoService, MongooseModule],
+  exports: [PhotoService, MinioService, MongooseModule],
 })
 export class PhotoModule {}

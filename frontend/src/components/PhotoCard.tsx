@@ -1,4 +1,3 @@
-// components/PhotoCard.tsx
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Heart, Trophy, User, Clock, Check } from 'lucide-react';
 import { Photo } from '@/services/votingApi';
-import { useAuthStore } from '@/stores/authStore';
+import { useUser } from '@/hooks/useUser';
 
 interface PhotoCardProps {
     photo: Photo;
@@ -27,8 +26,7 @@ export default function PhotoCard({
     isLoading = false
 }: PhotoCardProps) {
     const [isVoting, setIsVoting] = useState(false);
-    const { isAdmin } = useAuthStore();
-
+    const { user } = useUser();
     const handleVote = async () => {
         if (!canVote || isVoting) return;
 
@@ -83,7 +81,7 @@ export default function PhotoCard({
                 </h3>
 
                 {/* Participant Info - Only show for admins */}
-                {photo.participantName && isAdmin() && (
+                {photo.participantName && user?.role === 'ADMIN' && (
                     <div className="flex items-center text-sm text-gray-600 mb-2">
                         <User className="h-4 w-4 mr-1" />
                         <span>{photo.participantName}</span>
@@ -103,7 +101,7 @@ export default function PhotoCard({
                         </span>
                     </div>
 
-                    {isAdmin() && (
+                    {user?.role === 'ADMIN' && (
                         <Badge variant="secondary">
                             Votes: {photo.voteCount}
                         </Badge>

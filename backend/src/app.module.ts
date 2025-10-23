@@ -12,7 +12,7 @@ import { VotingModule } from "./modules/voting/voting.module";
     UsersModule,
     AuthModule,
     PhotoModule,
-    VotingModule
+    VotingModule,
   ],
 })
 export class AppModule {}

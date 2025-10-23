@@ -1,8 +1,5 @@
 'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/authStore';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +20,8 @@ import {
     Clock,
     BarChart3
 } from 'lucide-react';
+import { withAuth } from '@/utils/withAuth';
+import { UserRole } from '@/types';
 
 interface PhotoWithVotes {
     id: string;
@@ -34,35 +33,17 @@ interface PhotoWithVotes {
     winnerPosition?: number;
 }
 
-export default function AdminDashboard() {
-    const { user, isAuthenticated, canManageVoting } = useAuthStore();
-    const {
-        data: analytics,
-        isLoading,
-        error,
-        refetch
-    } = useAnalytics();
+function AdminDashboard() {
+
+    const { data: analytics, isLoading, error, refetch } = useAnalytics();
     const { mutateAsync: startVotingMutation } = useStartVoting();
     const { mutateAsync: stopVotingMutation } = useStopVoting();
     const { mutateAsync: declareWinnersMutation } = useDeclareWinners();
     const votingStats = useVotingStats();
 
-    const router = useRouter();
     const [selectedWinners, setSelectedWinners] = useState<string[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (!isAuthenticated) {
-            router.push('/login');
-            return;
-        }
-
-        if (!canManageVoting()) {
-            router.push('/voting');
-            return;
-        }
-    }, [isAuthenticated, canManageVoting, router]);
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
@@ -94,9 +75,9 @@ export default function AdminDashboard() {
     };
 
     const handleWinnerSelection = (photoId: string) => {
-        setSelectedWinners(prev => {
+        setSelectedWinners((prev) => {
             if (prev.includes(photoId)) {
-                return prev.filter(id => id !== photoId);
+                return prev.filter((id) => id !== photoId);
             } else if (prev.length < 3) {
                 return [...prev, photoId];
             }
@@ -120,14 +101,12 @@ export default function AdminDashboard() {
         }
     };
 
-    if (!isAuthenticated || !user || !canManageVoting()) {
-        return null;
-    }
-
     const votingActive = votingStats.votingActive;
     const resultsPublished = analytics?.votingSettings?.resultsPublished || false;
-    const topPhotos = analytics?.photosWithVotes.sort((a, b) => b.voteCount - a.voteCount).slice(0, 10) || [];
-
+    const topPhotos = analytics?.photosWithVotes
+        .sort((a, b) => b.voteCount - a.voteCount)
+        .slice(0, 10) || [];
+        
     return (
         <div className="max-w-7xl mx-auto">
             {/* Header */}
@@ -341,10 +320,10 @@ export default function AdminDashboard() {
                                         <div
                                             key={photo.id}
                                             className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all cursor-pointer ${selectedWinners.includes(photo.id)
-                                                    ? 'border-yellow-300 bg-yellow-50'
-                                                    : photo.isWinner
-                                                        ? 'border-green-300 bg-green-50'
-                                                        : 'border-gray-200 hover:border-gray-300'
+                                                ? 'border-yellow-300 bg-yellow-50'
+                                                : photo.isWinner
+                                                    ? 'border-green-300 bg-green-50'
+                                                    : 'border-gray-200 hover:border-gray-300'
                                                 }`}
                                             onClick={() => !resultsPublished && handleWinnerSelection(photo.id)}
                                         >
@@ -399,3 +378,5 @@ export default function AdminDashboard() {
         </div>
     );
 }
+
+export default withAuth(AdminDashboard, UserRole.ADMIN, '/voting');

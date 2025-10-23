@@ -1,12 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast, Toaster } from 'sonner';
-import { User } from '@/types';
 import { useSearchUsers, useUpdateUserRole } from '@/hooks/useUsers';
 import {
     Table,
@@ -17,14 +14,17 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertCircle, Search, UserPlus } from 'lucide-react';
+import { Search, UserPlus } from 'lucide-react';
+import { withAuth } from '@/utils/withAuth';
+import { UserRole } from '@/types';
+import { useUser } from '@/hooks/useUser';
 
-export default function AdminManagementPage() {
-    const { user, isAdmin } = useAuthStore();
+function AdminManagementPage() {
     const [showAddAdmin, setShowAddAdmin] = useState(false);
+    const { user } = useUser();
     const {
         data: users = [],
-        isLoading,
+        isLoading: usersLoading,
         query: searchQuery,
         setQuery: setSearchQuery
     } = useSearchUsers();
@@ -50,20 +50,6 @@ export default function AdminManagementPage() {
             }
         );
     };
-
-
-    if (!isAdmin()) {
-        return (
-            <div className="container mx-auto p-4">
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                        You do not have permission to access this page.
-                    </AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
 
     return (
         <div className="container mx-auto p-6 max-w-5xl">
@@ -97,7 +83,7 @@ export default function AdminManagementPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading ? (
+                            {usersLoading ? (
                                 <TableRow>
                                     <TableCell colSpan={4} className="text-center py-8">
                                         <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto" />
@@ -152,9 +138,9 @@ export default function AdminManagementPage() {
                             value={searchQuery}
                             onChange={handleSearch}
                             className="pl-10"
-                            disabled={isLoading}
+                            disabled={usersLoading}
                         />
-                        {isLoading && (
+                        {usersLoading && (
                             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                                 <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
                             </div>
@@ -172,7 +158,7 @@ export default function AdminManagementPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {isLoading ? (
+                                {usersLoading ? (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center py-8">
                                             <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto" />
@@ -219,3 +205,5 @@ export default function AdminManagementPage() {
         </div>
     );
 }
+
+export default withAuth(AdminManagementPage, UserRole.ADMIN, '/voting');

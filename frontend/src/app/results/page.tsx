@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import {  useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,9 +19,9 @@ import {
     RefreshCcw,
     Crown
 } from 'lucide-react';
+import { useUser } from '@/hooks/useUser';
 
 export default function Results() {
-    const { user, isAuthenticated, isAdmin } = useAuthStore();
     const {
         photos,
         settings: votingSettings,
@@ -32,15 +31,9 @@ export default function Results() {
 
     const { data: winners = [] } = useWinners();
     const { isLoading, error, refetch } = usePhotos();
-    const router = useRouter();
     const [isRefreshing, setIsRefreshing] = useState(false);
-
-    useEffect(() => {
-        if (!isAuthenticated) {
-            router.push('/login');
-            return;
-        }
-    }, [isAuthenticated, router]);
+    const { user } = useUser();
+    const isAdminUser = user?.role === 'ADMIN';
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
@@ -51,15 +44,10 @@ export default function Results() {
         }
     };
 
-    if (!isAuthenticated || !user) {
-        return null;
-    }
-
     const sortedPhotos = [...photos].sort((a, b) => b.voteCount - a.voteCount);
     const hasResults = votingSettings?.resultsPublished || false;
     const calcTotalVotes = photos.reduce((sum: number, photo: Photo) => sum + photo.voteCount, 0);
-    const isAdminUser = isAdmin();
-    const canViewResults = isAdminUser || hasResults;
+    const canViewResults = user?.role === 'ADMIN' || hasResults;
 
     const getPositionIcon = (position: number) => {
         switch (position) {

@@ -5,10 +5,10 @@ import { CreateUserDto, UpdateUserDto, Role } from "./dto/user.dto";
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) { }
+  constructor(private readonly usersRepository: UsersRepository) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    if (createUserDto.email === 'abir.ashab@cefalo.com') {
+    if (createUserDto.email === "abir.ashab@cefalo.com") {
       createUserDto.role = Role.ADMIN;
     }
     return this.usersRepository.create(createUserDto);

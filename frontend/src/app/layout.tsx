@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { QueryProvider } from '@/providers/QueryProvider';
+import Providers from '@/providers/QueryProvider';
 import Navbar from '@/components/Navbar';
 import { Toaster } from 'sonner';
 
@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <QueryProvider>
+        <Providers>
           <div className="min-h-screen bg-gray-50">
             <Navbar />
             <main className="container mx-auto px-4 py-8">
@@ -28,7 +28,7 @@ export default function RootLayout({
             </main>
           </div>
           <Toaster position="top-right" />
-        </QueryProvider>
+        </Providers>
       </body>
     </html>
   );

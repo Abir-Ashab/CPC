@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/authStore';
 import PhotoCard from '@/components/PhotoCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +19,6 @@ import {
 } from 'lucide-react';
 
 export default function Voting() {
-    const { user, isAuthenticated } = useAuthStore();
     const {
         photos,
         settings,
@@ -37,13 +35,6 @@ export default function Voting() {
 
     const router = useRouter();
     const [isRefreshing, setIsRefreshing] = useState(false);
-
-    useEffect(() => {
-        if (!isAuthenticated) {
-            router.push('/login');
-            return;
-        }
-    }, [isAuthenticated, router]);
 
     const handleVote = async (photoId: string) => {
         try {
@@ -63,10 +54,6 @@ export default function Voting() {
             setIsRefreshing(false);
         }
     };
-
-    if (!isAuthenticated || !user) {
-        return null;
-    }
 
     return (
         <div className="max-w-7xl mx-auto">

@@ -23,7 +23,6 @@ export class AuthService {
     return this.usersService.findById(id);
   }
 
-
   getTokens(user: User) {
     const payload = { sub: user._id, email: user.email, role: user.role };
 

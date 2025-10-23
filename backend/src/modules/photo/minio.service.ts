@@ -67,7 +67,7 @@ export class MinioService {
     return await this.minioClient.presignedGetObject(
       this.bucketName,
       fileName,
-      24 * 60 * 60, 
+      24 * 60 * 60,
     );
   }
 

@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Photo, PhotoDocument } from './photo.schema';
-import { MinioService } from './minio.service';
-import { v4 as uuidv4 } from 'uuid';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { Photo, PhotoDocument } from "./photo.schema";
+import { MinioService } from "./minio.service";
+import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class PhotoService {
@@ -24,13 +24,9 @@ export class PhotoService {
       caption?: string;
     },
   ): Promise<Photo> {
-    const fileExtension = file.originalname.split('.').pop();
+    const fileExtension = file.originalname.split(".").pop();
     const fileName = `${uuidv4()}.${fileExtension}`;
-    await this.minioService.uploadFile(
-      fileName,
-      file.buffer,
-      file.mimetype,
-    );
+    await this.minioService.uploadFile(fileName, file.buffer, file.mimetype);
     const url = await this.minioService.getFileUrl(fileName);
 
     const photo = new this.photoModel({
@@ -52,10 +48,7 @@ export class PhotoService {
   }
 
   async getAllPhotos(): Promise<any[]> {
-    const photos = await this.photoModel
-      .find()
-      .sort({ uploadedAt: -1 })
-      .exec();
+    const photos = await this.photoModel.find().sort({ uploadedAt: -1 }).exec();
 
     return await Promise.all(
       photos.map(async (photo) => {
@@ -76,7 +69,9 @@ export class PhotoService {
   }
 
   async checkParticipantExists(email: string): Promise<boolean> {
-    const count = await this.photoModel.countDocuments({ participantEmail: email });
+    const count = await this.photoModel.countDocuments({
+      participantEmail: email,
+    });
     return count > 0;
   }
 
@@ -87,7 +82,7 @@ export class PhotoService {
   async deletePhoto(id: string): Promise<void> {
     const photo = await this.photoModel.findById(id);
     if (!photo) {
-      throw new Error('Photo not found');
+      throw new Error("Photo not found");
     }
     await this.minioService.deleteFile(photo.fileName);
     await this.photoModel.findByIdAndDelete(id);

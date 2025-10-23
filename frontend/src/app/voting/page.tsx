@@ -3,40 +3,38 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { useVotingStore } from '@/stores/votingStore';
 import PhotoCard from '@/components/PhotoCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-    Trophy, 
-    Clock, 
-    Users, 
-    Heart, 
-    AlertCircle, 
-    CheckCircle, 
-    RefreshCcw 
+import { useVotingState, useVote, usePhotos } from '@/hooks/useVoting';
+import { Photo } from '@/services/votingApi';
+import {
+    Trophy,
+    Clock,
+    Users,
+    Heart,
+    AlertCircle,
+    CheckCircle,
+    RefreshCcw
 } from 'lucide-react';
 
 export default function Voting() {
     const { user, isAuthenticated } = useAuthStore();
     const {
         photos,
-        votingSettings,
+        settings,
         userVote,
-        isLoading,
-        error,
-        fetchPhotos,
-        fetchVotingSettings,
-        fetchUserVote,
-        vote,
-        clearError,
         canVote,
         hasVoted,
-        getUserVotedPhotoId,
-        isVotingActive
-    } = useVotingStore();
-    
+        votedPhotoId,
+        votingActive,
+        totalVotes
+    } = useVotingState();
+
+    const { isLoading, error, refetch } = usePhotos();
+    const voteMutation = useVote();
+
     const router = useRouter();
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -45,38 +43,22 @@ export default function Voting() {
             router.push('/login');
             return;
         }
-
-        // Fetch initial data
-        const fetchData = async () => {
-            await Promise.all([
-                fetchPhotos(),
-                fetchVotingSettings(),
-                fetchUserVote()
-            ]);
-        };
-
-        fetchData();
     }, [isAuthenticated, router]);
 
     const handleVote = async (photoId: string) => {
-        const success = await vote(photoId);
-        if (success) {
-            // Show success feedback
-            setTimeout(() => {
-                clearError();
-            }, 3000);
+        try {
+            await voteMutation.mutateAsync(photoId);
+            await refetch(); // Refresh the photos after voting
+            return true;
+        } catch (error) {
+            return false;
         }
-        return success;
     };
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
         try {
-            await Promise.all([
-                fetchPhotos(),
-                fetchVotingSettings(),
-                fetchUserVote()
-            ]);
+            await refetch();
         } finally {
             setIsRefreshing(false);
         }
@@ -85,11 +67,6 @@ export default function Voting() {
     if (!isAuthenticated || !user) {
         return null;
     }
-
-    const votedPhotoId = getUserVotedPhotoId();
-    const votingIsActive = isVotingActive();
-    const userCanVote = canVote();
-    const userHasVoted = hasVoted();
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -104,7 +81,7 @@ export default function Voting() {
                             Vote for your favorite photo
                         </p>
                     </div>
-                    
+
                     <Button
                         onClick={handleRefresh}
                         variant="outline"
@@ -118,22 +95,22 @@ export default function Voting() {
 
                 {/* Voting Status */}
                 <div className="flex flex-wrap gap-4 mb-6">
-                    <Badge variant={votingIsActive ? "default" : "secondary"} className="px-3 py-1">
+                    <Badge variant={votingActive ? "default" : "secondary"} className="px-3 py-1">
                         <Clock className="h-4 w-4 mr-1" />
-                        {votingIsActive ? 'Voting Active' : 'Voting Closed'}
+                        {votingActive ? 'Voting Active' : 'Voting Closed'}
                     </Badge>
-                    
+
                     <Badge variant="outline" className="px-3 py-1">
                         <Users className="h-4 w-4 mr-1" />
                         {photos.length} Photos
                     </Badge>
-                    
+
                     <Badge variant="outline" className="px-3 py-1">
                         <Heart className="h-4 w-4 mr-1" />
-                        {photos.reduce((sum, photo) => sum + photo.voteCount, 0)} Total Votes
+                        {totalVotes} Total Votes
                     </Badge>
-                    
-                    {userHasVoted && (
+
+                    {hasVoted && (
                         <Badge variant="default" className="bg-green-600 px-3 py-1">
                             <CheckCircle className="h-4 w-4 mr-1" />
                             You have voted
@@ -142,7 +119,7 @@ export default function Voting() {
                 </div>
 
                 {/* Voting Instructions */}
-                {!userHasVoted && votingIsActive && (
+                {!hasVoted && votingActive && (
                     <Alert className="bg-blue-50 border-blue-200">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>
@@ -151,20 +128,20 @@ export default function Voting() {
                     </Alert>
                 )}
 
-                {userHasVoted && (
+                {hasVoted && (
                     <Alert className="bg-green-50 border-green-200">
                         <CheckCircle className="h-4 w-4" />
                         <AlertDescription>
-                            Thank you for voting! You voted for "{photos.find(p => p.id === votedPhotoId)?.name}".
+                            Thank you for voting! You voted for "{photos.find((p: Photo) => p.id === votedPhotoId)?.name}".
                         </AlertDescription>
                     </Alert>
                 )}
 
-                {!votingIsActive && (
+                {!votingActive && (
                     <Alert className="bg-orange-50 border-orange-200">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>
-                            {votingSettings?.resultsPublished 
+                            {settings?.resultsPublished
                                 ? 'Voting has ended. Check the results page to see the winners!'
                                 : 'Voting is currently not active. Please wait for the voting period to begin.'
                             }
@@ -174,18 +151,18 @@ export default function Voting() {
             </div>
 
             {/* Error Display */}
-            {error && (
+            {error instanceof Error && (
                 <Alert className="bg-red-50 border-red-200 mb-6" variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="flex items-center justify-between">
-                        <span>{error}</span>
-                        <Button 
-                            onClick={clearError} 
-                            variant="ghost" 
+                        <span>{error.message}</span>
+                        <Button
+                            onClick={() => refetch()}
+                            variant="ghost"
                             size="sm"
                             className="text-red-600 hover:text-red-800"
                         >
-                            Dismiss
+                            Retry
                         </Button>
                     </AlertDescription>
                 </Alert>
@@ -213,15 +190,15 @@ export default function Voting() {
             {/* Photo Grid */}
             {photos.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {photos.map((photo) => (
+                    {photos.map((photo: Photo) => (
                         <PhotoCard
                             key={photo.id}
                             photo={photo}
                             onVote={handleVote}
-                            canVote={userCanVote}
-                            hasUserVoted={userHasVoted}
+                            canVote={!!canVote}
+                            hasUserVoted={hasVoted}
                             isUserVotedPhoto={photo.id === votedPhotoId}
-                            isLoading={isLoading}
+                            isLoading={voteMutation.isPending || isLoading}
                         />
                     ))}
                 </div>
@@ -231,9 +208,9 @@ export default function Voting() {
             {photos.length > 0 && (
                 <div className="mt-12 pt-8 border-t text-center text-gray-500 text-sm">
                     <p>
-                        {userHasVoted 
-                            ? `You voted for "${photos.find(p => p.id === votedPhotoId)?.name}". Thank you for participating!`
-                            : votingIsActive 
+                        {hasVoted
+                            ? `You voted for "${photos.find((p: Photo) => p.id === votedPhotoId)?.name}". Thank you for participating!`
+                            : votingActive
                                 ? 'Make sure to vote before the voting period ends!'
                                 : 'Voting is not currently active.'
                         }

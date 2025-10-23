@@ -25,7 +25,6 @@ export default function Navbar() {
         fetchUser, 
         logout,
         isAdmin,
-        isSuperAdmin 
     } = useAuthStore();
     const router = useRouter();
     const pathname = usePathname();
@@ -42,10 +41,8 @@ export default function Navbar() {
         }
     }, [isLoading, isAuthenticated, user, router, pathname]);
 
-    // Don't show navbar on login page
     if (pathname === '/login') return null;
 
-    // Show loading navbar
     if (isLoading) {
         return (
             <nav className="border-b bg-white shadow-sm">
@@ -103,17 +100,17 @@ export default function Navbar() {
                                 Results
                             </Link>
                             
-                            {(isAdmin() || isSuperAdmin()) && (
+                            {(isAdmin()) && (
                                 <Link 
                                     href="/admin" 
                                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                                         pathname.startsWith('/admin') 
-                                            ? 'bg-red-100 text-red-700' 
+                                            ? 'bg-blue-100 text-blue-800' 
                                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                                     }`}
                                 >
                                     <Settings className="h-4 w-4 inline mr-2" />
-                                    Admin
+                                    Admin Panel
                                 </Link>
                             )}
                         </div>
@@ -145,7 +142,7 @@ export default function Navbar() {
                                 <DropdownMenuSeparator />
                                 
                                 <DropdownMenuLabel className="text-xs text-muted-foreground uppercase">
-                                    Role: {isSuperAdmin() ? 'Super Admin' : user.role}
+                                    Role: {user.role}
                                 </DropdownMenuLabel>
                                 
                                 <DropdownMenuSeparator />
@@ -164,18 +161,18 @@ export default function Navbar() {
                                             Results
                                         </Link>
                                     </DropdownMenuItem>
-                                    {(isAdmin() || isSuperAdmin()) && (
+                                    {isAdmin() && (
                                         <DropdownMenuItem asChild>
                                             <Link href="/admin" className="flex items-center">
                                                 <Settings className="h-4 w-4 mr-2" />
-                                                Admin
+                                                Admin Panel
                                             </Link>
                                         </DropdownMenuItem>
                                     )}
                                     <DropdownMenuSeparator />
                                 </div>
                                 
-                                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                                <DropdownMenuItem onClick={handleLogout} className="text-blue-600">
                                     <LogOut className="h-4 w-4 mr-2" />
                                     Logout
                                 </DropdownMenuItem>

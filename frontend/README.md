@@ -1,23 +1,30 @@
-# Photo Upload App
+# Photo Contest Application - Frontend
 
-A modern photo uploading and gallery application built with Next.js, MinIO, and Tailwind CSS, fully containerized with Docker.
+A modern photo contest application with authentication, voting, and admin features built with Next.js 14 and Tailwind CSS.
 
 ## Features
 
-- 📸 Drag & drop photo upload
-- 🖼️ Beautiful photo gallery with hover effects
-- 🗑️ Delete photos functionality
-- 📱 Responsive design with Tailwind CSS
-- 🐳 Fully dockerized with Docker Compose
-- 💾 MinIO object storage for scalable photo storage
+- � Google OAuth authentication
+- 📸 Photo upload with drag & drop support
+- �️ Photo voting system (like/dislike)
+- 👑 Admin panel for contest management
+- � Real-time voting results
+- 📱 Fully responsive design with Tailwind CSS
+- 🎨 Modern UI with shadcn/ui components
 - ⚡ Next.js 14 with App Router and TypeScript
+- 🔄 React Query for efficient data fetching
+- 🏪 Zustand for state management
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14, React, TypeScript
-- **Styling**: Tailwind CSS
-- **Storage**: MinIO (S3-compatible object storage)
-- **Containerization**: Docker & Docker Compose
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **State Management**: Zustand
+- **Data Fetching**: React Query (@tanstack/react-query)
+- **HTTP Client**: Axios with interceptors
+- **Authentication**: JWT tokens with refresh
+- **Icons**: Lucide React
 
 ## Quick Start
 
@@ -28,96 +35,148 @@ A modern photo uploading and gallery application built with Next.js, MinIO, and 
 
 ### Running with Docker (Recommended)
 
-1. Clone the repository:
-```bash
-git clone <your-repo-url>
-cd photo-upload-app
-```
+1. Clone the repository and start all services:
 
-2. Start the application:
 ```bash
 docker-compose up --build
 ```
 
-3. Access the application:
-   - **Photo App**: http://localhost:3000
-   - **MinIO Console**: http://localhost:9001 (admin/minioadmin)
+2. Access the application:
+   - **Frontend**: <http://localhost:3000>
+   - **Backend API**: <http://localhost:5000>
+   - **MinIO Console**: <http://localhost:9001> (minioadmin/minioadmin)
 
 ### Local Development
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
-2. Start MinIO locally:
+2. Configure environment variables:
+
 ```bash
-docker run -p 9000:9000 -p 9001:9001 --name minio \
-  -e "MINIO_ROOT_USER=minioadmin" \
-  -e "MINIO_ROOT_PASSWORD=minioadmin" \
-  minio/minio server /data --console-address ":9001"
+# Create .env.local file
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
 ```
 
-3. Start the development server:
+3. Make sure the backend is running, then start the development server:
+
 ```bash
 npm run dev
 ```
+
+The frontend will be available at <http://localhost:3000>
 
 ## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| MINIO_ENDPOINT | MinIO server endpoint | localhost |
-| MINIO_PORT | MinIO server port | 9000 |
-| MINIO_ACCESS_KEY | MinIO access key | minioadmin |
-| MINIO_SECRET_KEY | MinIO secret key | minioadmin |
-| MINIO_BUCKET_NAME | Storage bucket name | photos |
-| MINIO_USE_SSL | Use SSL for MinIO | false |
+| NEXT_PUBLIC_API_URL | Backend API URL | http://localhost:5000/api |
 
 ## Project Structure
 
-```
-photo-upload-app/
+```text
+frontend/
 ├── src/
 │   ├── app/
-│   │   ├── api/
-│   │   │   ├── upload/
-│   │   │   └── photos/
 │   │   ├── globals.css
 │   │   ├── layout.tsx
-│   │   └── page.tsx
+│   │   ├── page.tsx              # Home page with photo gallery
+│   │   ├── admin/
+│   │   │   └── page.tsx          # Admin dashboard
+│   │   ├── api/
+│   │   │   ├── photos/           # Photo API routes
+│   │   │   └── upload/           # Upload API routes
+│   │   ├── login/
+│   │   │   └── page.tsx          # Login page
+│   │   ├── results/
+│   │   │   └── page.tsx          # Voting results
+│   │   └── voting/
+│   │       └── page.tsx          # Voting interface
 │   ├── components/
-│   │   ├── PhotoUpload.tsx
-│   │   └── PhotoGallery.tsx
-│   └── lib/
-│       └── minio.ts
-├── docker-compose.yml
+│   │   ├── Navbar.tsx            # Navigation component
+│   │   ├── PhotoCard.tsx         # Individual photo display
+│   │   ├── PhotoGallery.tsx      # Photo grid layout
+│   │   ├── PhotoUpload.tsx       # Upload interface
+│   │   └── ui/                   # shadcn/ui components
+│   ├── lib/
+│   │   ├── api.ts               # Axios configuration
+│   │   └── utils.ts             # Utility functions
+│   ├── providers/
+│   │   └── QueryProvider.tsx    # React Query provider
+│   └── stores/
+│       ├── adminStore.ts        # Admin state management
+│       ├── authStore.ts         # Authentication state
+│       └── votingStore.ts       # Voting state
 ├── Dockerfile
 └── package.json
 ```
 
-## API Endpoints
+## Key Features
 
-- `POST /api/upload` - Upload a photo
-- `GET /api/photos` - Get all photos
-- `DELETE /api/photos/[id]` - Delete a photo
+### Authentication Flow
+- Google OAuth integration with JWT tokens
+- Automatic token refresh on API calls
+- Protected routes for authenticated users
+
+### Photo Management
+- Drag & drop photo upload
+- Image preview before upload
+- Photo gallery with responsive grid
+- Delete functionality (with proper authorization)
+
+### Voting System
+- Like/dislike voting on photos
+- Real-time vote counting
+- Vote restrictions per user
+- Results visualization
+
+### Admin Features
+- Contest settings management
+- User management
+- Voting controls (enable/disable)
+- Analytics and reporting
+
+## Pages & Routes
+
+- `/` - Home page with photo gallery
+- `/login` - Authentication page
+- `/voting` - Voting interface for photos
+- `/results` - Live voting results
+- `/admin` - Admin dashboard (admin only)
+
+## State Management
+
+The application uses Zustand for state management:
+
+- **authStore**: User authentication state and login/logout
+- **votingStore**: Voting state and photo data
+- **adminStore**: Admin-specific state and settings
+
+## API Integration
+
+The frontend communicates with the NestJS backend through:
+
+- Axios HTTP client with interceptors
+- Automatic token refresh handling
+- React Query for efficient data fetching and caching
+- Error handling and retry logic
 
 ## Deployment
 
 ### Production with Docker
 
-1. Update environment variables in `.env.production`
-2. Build and run:
 ```bash
-docker-compose -f docker-compose.yml up --build -d
+docker-compose up --build -d
 ```
 
-### Cloud Deployment
+### Vercel Deployment
 
-For cloud deployment, you can:
-1. Use managed MinIO services (AWS S3, DigitalOcean Spaces, etc.)
-2. Deploy to platforms like Vercel, Railway, or DigitalOcean App Platform
-3. Use Kubernetes for orchestration
+1. Connect your repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
 
 ## Contributing
 

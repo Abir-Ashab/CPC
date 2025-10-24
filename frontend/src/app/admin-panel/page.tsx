@@ -61,7 +61,6 @@ function AdminDashboard() {
     const [showSettingsDialog, setShowSettingsDialog] = useState(false);
     const [showResetDialog, setShowResetDialog] = useState(false);
 
-    // Auto-refresh countdown for voting end time
     const [timeLeft, setTimeLeft] = useState<string>('');
 
     useEffect(() => {
@@ -104,22 +103,21 @@ function AdminDashboard() {
     const handleStartVoting = async (settings?: { startTime?: Date; durationHours?: number }) => {
         setActionLoading('start');
         try {
-            if (settings) {
-                // Schedule voting
-                const endTime = settings.startTime
-                    ? new Date(settings.startTime.getTime() + (settings.durationHours || 24) * 60 * 60 * 1000)
-                    : new Date(Date.now() + (settings.durationHours || 24) * 60 * 60 * 1000);
+            const durationHours = settings?.durationHours || 24; // Default to 24 hours
+            const startTime = settings?.startTime || new Date();
+            const endTime = new Date(startTime.getTime() + durationHours * 60 * 60 * 1000);
 
-                await updateVotingSettingsMutation({
-                    isVotingActive: true,
-                    votingStartTime: settings.startTime || new Date(),
-                    votingEndTime: endTime,
-                });
-                toast.success(`Voting scheduled successfully! Ends in ${settings.durationHours || 24} hours`);
-            } else {
-                await startVotingMutation();
-                toast.success('Voting started successfully!');
-            }
+            await updateVotingSettingsMutation({
+                isVotingActive: true,
+                votingStartTime: startTime,
+                votingEndTime: endTime,
+            });
+
+            const message = settings?.startTime 
+                ? `Voting scheduled successfully! Ends in ${durationHours} hours`
+                : `Voting started successfully! Ends in ${durationHours} hours`;
+            toast.success(message);
+            
             await refetch();
         } catch (err: any) {
             toast.error(err.message || 'Failed to start voting');
@@ -222,14 +220,12 @@ function AdminDashboard() {
 
     const votingActive = votingStats.votingActive;
     const resultsPublished = analytics?.votingSettings?.resultsPublished || false;
-    const votingEndTime = analytics?.votingSettings?.votingEndTime;
     const topPhotos = analytics?.photosWithVotes
         .sort((a, b) => b.voteCount - a.voteCount)
         .slice(0, 10) || [];
 
     return (
         <div className="max-w-7xl mx-auto p-6">
-            {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
                     <div>
@@ -263,7 +259,6 @@ function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Status */}
                 <div className="flex flex-wrap gap-4 mb-6">
                     <Badge variant={votingActive ? "default" : "secondary"} className="px-3 py-1">
                         <Clock className="h-4 w-4 mr-1" />
@@ -311,7 +306,6 @@ function AdminDashboard() {
 
             {analytics && (
                 <>
-                    {/* Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -542,7 +536,6 @@ function AdminDashboard() {
                 </>
             )}
 
-            {/* Dialogs */}
             <VotingSettingsDialog
                 open={showSettingsDialog}
                 onOpenChange={setShowSettingsDialog}

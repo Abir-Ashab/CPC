@@ -34,7 +34,7 @@ export function VotingSettingsDialog({ open, onOpenChange, onStartVoting, loadin
     };
 
     const handleImmediateStart = () => {
-        onStartVoting(); // Start immediately with default settings
+        onStartVoting({ durationHours }); 
     };
 
     return (

@@ -4,6 +4,7 @@ import { Model } from "mongoose";
 import { Photo, PhotoDocument } from "./photo.schema";
 import { MinioService } from "./minio.service";
 import { v4 as uuidv4 } from "uuid";
+import { extractCategoryFromCaption } from "../../utils/category-extractor.util";
 
 @Injectable()
 export class PhotoService {
@@ -22,12 +23,16 @@ export class PhotoService {
       slackId?: string;
       team?: string;
       caption?: string;
+      category?: string;
     },
   ): Promise<Photo> {
     const fileExtension = file.originalname.split(".").pop();
     const fileName = `${uuidv4()}.${fileExtension}`;
     await this.minioService.uploadFile(fileName, file.buffer, file.mimetype);
     const url = await this.minioService.getFileUrl(fileName);
+
+    // Extract category from caption using the helper function
+    const category = participantInfo?.category || extractCategoryFromCaption(participantInfo?.caption || '');
 
     const photo = new this.photoModel({
       name: photoName || file.originalname,
@@ -39,6 +44,7 @@ export class PhotoService {
       participantSlackId: participantInfo?.slackId,
       participantTeam: participantInfo?.team,
       caption: participantInfo?.caption,
+      category: category,
       contentType: file.mimetype,
       size: file.size,
       uploadedAt: new Date(),
@@ -63,6 +69,8 @@ export class PhotoService {
           winnerPosition: photo.winnerPosition,
           participantName: photo.participantName,
           participantEmail: photo.participantEmail,
+          category: photo.category,
+          caption: photo.caption,
         };
       }),
     );

@@ -33,6 +33,9 @@ export class Photo {
   caption: string;
 
   @Prop()
+  category: string;
+
+  @Prop()
   contentType: string;
 
   @Prop()
@@ -48,7 +51,7 @@ export class Photo {
   isWinner: boolean;
 
   @Prop()
-  winnerPosition?: number; // 1, 2, or 3 for first, second, third place
+  winnerPosition?: number; 
 }
 
 export const PhotoSchema = SchemaFactory.createForClass(Photo);

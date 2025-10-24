@@ -10,6 +10,8 @@ export interface Photo {
     winnerPosition?: number;
     participantName?: string;
     participantEmail?: string;
+    category?: string;
+    caption?: string;
 }
 
 export interface Vote {

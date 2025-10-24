@@ -31,14 +31,17 @@ export interface ApiError {
 export interface AdminAnalytics {
     totalVotes: number;
     totalPhotos: number;
-    photosWithVotes: Array<{
-        id: string;
-        name: string;
-        voteCount: number;
-        participantName?: string;
-        participantEmail?: string;
-        isWinner: boolean;
-        winnerPosition?: number;
-    }>;
+    totalUsers: number;
+    photosWithVotes: PhotoWithVotes[];
     votingSettings: VotingSettings;
+}
+
+export interface PhotoWithVotes {
+    id: string;
+    name: string;
+    voteCount: number;
+    participantName?: string;
+    participantEmail?: string;
+    isWinner: boolean;
+    winnerPosition?: number;
 }

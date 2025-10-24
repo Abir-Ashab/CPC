@@ -7,6 +7,7 @@ export type UserDocument = User & Document;
 @Schema({ timestamps: true })
 export class User {
   _id: Types.ObjectId;
+
   @Prop({ required: true, unique: true })
   email: string;
 
@@ -28,6 +29,9 @@ export class User {
 
   @Prop({ type: Types.ObjectId, ref: "Photo", required: false })
   votedPhotoId?: Types.ObjectId;
+
+  @Prop()
+  votedAt?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

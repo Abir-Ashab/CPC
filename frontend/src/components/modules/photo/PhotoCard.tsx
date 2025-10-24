@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Heart, Trophy, User, Clock, Check } from 'lucide-react';
+import { Heart, Trophy, User, Clock, Check, Eye } from 'lucide-react';
 import { Photo } from '@/services/votingApi';
 import { useUser } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface PhotoCardProps {
     photo: Photo;
@@ -15,6 +16,7 @@ interface PhotoCardProps {
     hasUserVoted: boolean;
     isUserVotedPhoto: boolean;
     isLoading?: boolean;
+    votingActive?: boolean;
 }
 
 export default function PhotoCard({
@@ -23,19 +25,31 @@ export default function PhotoCard({
     canVote,
     hasUserVoted,
     isUserVotedPhoto,
-    isLoading = false
+    isLoading = false,
+    votingActive = true
 }: PhotoCardProps) {
     const [isVoting, setIsVoting] = useState(false);
+    const [imageLoaded, setImageLoaded] = useState(false);
     const { user } = useUser();
+
     const handleVote = async () => {
-        if (!canVote || isVoting) return;
+        if (!canVote || isVoting || !votingActive) return;
 
         setIsVoting(true);
         try {
-            await onVote(photo.id);
+            const success = await onVote(photo.id);
+            if (success) {
+                // Success toast is handled in the parent component
+            }
         } finally {
             setIsVoting(false);
         }
+    };
+
+    const handleImageError = () => {
+        toast.error('Failed to load image', {
+            description: 'Please try refreshing the page.'
+        });
     };
 
     const getWinnerBadge = () => {
@@ -54,74 +68,109 @@ export default function PhotoCard({
     };
 
     return (
-        <Card className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg ${isUserVotedPhoto ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+        <Card className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg border-2 ${isUserVotedPhoto
+            ? 'border-blue-500 bg-blue-50 shadow-md'
+            : photo.isWinner
+                ? 'border-yellow-300 bg-yellow-50'
+                : 'border-gray-200 hover:border-gray-300'
             }`}>
             {getWinnerBadge()}
 
+            {/* Image Container */}
             <div className="relative aspect-square overflow-hidden bg-gray-100">
+                {!imageLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
+                    </div>
+                )}
                 <img
                     src={photo.url}
                     alt={photo.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+                        }`}
                     loading="lazy"
+                    onLoad={() => setImageLoaded(true)}
+                    onError={handleImageError}
                 />
 
+                {/* Overlay on hover */}
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <Eye className="h-8 w-8 text-white" />
+                </div>
+
                 {isUserVotedPhoto && (
-                    <div className="absolute inset-0 bg-blue-600 bg-opacity-20 flex items-center justify-center">
-                        <div className="bg-white rounded-full p-2">
-                            <Check className="h-6 w-6 text-blue-600" />
-                        </div>
+                    <div className="absolute top-2 right-2 z-10">
+                        <Badge className="bg-blue-600 text-white">
+                            <Check className="h-3 w-3 mr-1" />
+                            Your Vote
+                        </Badge>
                     </div>
                 )}
             </div>
 
             <CardContent className="p-4">
-                <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                {/* Photo Title */}
+                <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-gray-900">
                     {photo.name}
                 </h3>
 
+                {/* Caption */}
+                {photo.caption && (
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        {photo.caption}
+                    </p>
+                )}
+
+                {/* Participant Info (Admin only) */}
                 {photo.participantName && user?.role === 'ADMIN' && (
                     <div className="flex items-center text-sm text-gray-600 mb-2">
                         <User className="h-4 w-4 mr-1" />
-                        <span>{photo.participantName}</span>
+                        <span className="font-medium">{photo.participantName}</span>
+                        {photo.participantEmail && (
+                            <span className="text-gray-500 ml-2">({photo.participantEmail})</span>
+                        )}
                     </div>
                 )}
 
+                {/* Meta Information */}
                 <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
                     <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-1" />
                         <span>{new Date(photo.uploadedAt).toLocaleDateString()}</span>
                     </div>
                     {photo.category && (
-                        <Badge variant="outline" className="text-xs">
-                            {photo.category} 
+                        <Badge variant="secondary" className="text-xs">
+                            {photo.category}
                         </Badge>
                     )}
                 </div>
 
+                {/* Vote Count and Status */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center text-sm">
-                        <Heart className={`h-4 w-4 mr-1 ${photo.voteCount > 0 ? 'text-red-500' : 'text-gray-400'}`} />
-                        <span className="font-medium">
+                        <Heart className={`h-4 w-4 mr-1 ${photo.voteCount > 0 ? 'text-red-500 fill-red-500' : 'text-gray-400'
+                            }`} />
+                        <span className="font-medium text-gray-900">
                             {photo.voteCount} {photo.voteCount === 1 ? 'vote' : 'votes'}
                         </span>
                     </div>
 
                     {user?.role === 'ADMIN' && (
-                        <Badge variant="secondary">
-                            Votes: {photo.voteCount}
+                        <Badge variant="outline" className="text-xs">
+                            ID: {photo.id.slice(-6)}
                         </Badge>
                     )}
                 </div>
             </CardContent>
 
+            {/* Vote Button */}
             <CardFooter className="p-4 pt-0">
-                {canVote && !hasUserVoted ? (
+                {canVote && !hasUserVoted && votingActive ? (
                     <Button
                         onClick={handleVote}
                         disabled={isVoting || isLoading}
-                        className="w-full"
-                        variant="default"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                        size="lg"
                     >
                         {isVoting ? (
                             <>
@@ -131,26 +180,26 @@ export default function PhotoCard({
                         ) : (
                             <>
                                 <Heart className="h-4 w-4 mr-2" />
-                                Vote for this photo
+                                Vote Now
                             </>
                         )}
                     </Button>
                 ) : hasUserVoted ? (
                     <div className="w-full text-center">
                         {isUserVotedPhoto ? (
-                            <Badge className="bg-blue-600 text-white">
+                            <Badge className="bg-green-600 text-white px-4 py-2 text-sm">
                                 <Check className="h-4 w-4 mr-1" />
-                                Your Vote
+                                You Voted for This
                             </Badge>
                         ) : (
-                            <Badge variant="secondary">
-                                Voting Complete
+                            <Badge variant="secondary" className="px-4 py-2 text-sm">
+                                Vote Submitted
                             </Badge>
                         )}
                     </div>
                 ) : (
-                    <Badge variant="outline" className="w-full justify-center">
-                        Voting Not Active
+                    <Badge variant="outline" className="w-full justify-center py-2 text-sm">
+                        {votingActive ? 'Vote Now' : 'Voting Closed'}
                     </Badge>
                 )}
             </CardFooter>

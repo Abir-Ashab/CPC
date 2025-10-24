@@ -10,7 +10,7 @@ export class PhotoService {
   constructor(
     @InjectModel(Photo.name) private photoModel: Model<PhotoDocument>,
     private minioService: MinioService,
-  ) {}
+  ) { }
 
   async uploadPhoto(
     file: Express.Multer.File,
@@ -42,6 +42,9 @@ export class PhotoService {
       contentType: file.mimetype,
       size: file.size,
       uploadedAt: new Date(),
+      voteCount: 0, // Initialize vote count
+      isWinner: false,
+      winnerPosition: undefined,
     });
 
     return await photo.save();
@@ -86,5 +89,37 @@ export class PhotoService {
     }
     await this.minioService.deleteFile(photo.fileName);
     await this.photoModel.findByIdAndDelete(id);
+  }
+
+  // New method to increment vote count
+  async incrementVoteCount(photoId: string): Promise<Photo | null> {
+    return this.photoModel.findByIdAndUpdate(
+      photoId,
+      { $inc: { voteCount: 1 } },
+      { new: true }
+    );
+  }
+
+  async decrementVoteCount(photoId: string): Promise<Photo | null> {
+    return this.photoModel.findByIdAndUpdate(
+      photoId,
+      { $inc: { voteCount: -1 } },
+      { new: true }
+    );
+  }
+
+  async resetAllPhotos(): Promise<void> {
+    await this.photoModel.updateMany(
+      {},
+      {
+        voteCount: 0,
+        isWinner: false,
+        winnerPosition: undefined,
+      }
+    );
+  }
+
+  async findById(id: string): Promise<Photo | null> {
+    return this.photoModel.findById(id);
   }
 }

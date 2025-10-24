@@ -6,25 +6,28 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
-import { Vote, VoteDocument } from "./vote.schema";
 import { Photo, PhotoDocument } from "../photo/photo.schema";
 import {
   VotingSettings,
   VotingSettingsDocument,
 } from "./voting-settings.schema";
-import { User } from "../users/schema/user.schema";
+import { User, UserDocument } from "../users/schema/user.schema";
 import { Role } from "../users/dto/user.dto";
 import { MinioService } from "../photo/minio.service";
+import { UsersService } from "../users/users.service";
+import { PhotoService } from "../photo/photo.service";
 
 @Injectable()
 export class VotingService {
   constructor(
-    @InjectModel(Vote.name) private voteModel: Model<VoteDocument>,
     @InjectModel(Photo.name) private photoModel: Model<PhotoDocument>,
     @InjectModel(VotingSettings.name)
     private votingSettingsModel: Model<VotingSettingsDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private minioService: MinioService,
-  ) {}
+    private usersService: UsersService,
+    private photoService: PhotoService,
+  ) { }
 
   async getVotingSettings(): Promise<VotingSettingsDocument> {
     let settings = await this.votingSettingsModel.findOne();
@@ -91,7 +94,7 @@ export class VotingService {
     }
 
     // Check if photo exists
-    const photo = await this.photoModel.findById(photoId);
+    const photo = await this.photoService.findById(photoId);
     if (!photo) {
       throw new NotFoundException("Photo not found");
     }
@@ -100,21 +103,20 @@ export class VotingService {
       throw new BadRequestException("User authentication required");
     }
 
-    const existingVote = await this.voteModel.findOne({ userId: user._id });
-    if (existingVote) {
+    // Check if user has already voted using votedPhotoId
+    const currentUser = await this.usersService.findById(user._id.toString());
+    if (currentUser?.votedPhotoId) {
       throw new BadRequestException("You have already voted");
     }
 
-    await this.voteModel.create({
-      photoId: new Types.ObjectId(photoId),
-      userId: user._id,
-      userEmail: user.email,
+    // Update user's votedPhotoId and votedAt
+    await this.usersService.updateUser(user._id.toString(), {
+      votedPhotoId: photoId,
       votedAt: new Date(),
     });
 
-    await this.photoModel.findByIdAndUpdate(photoId, {
-      $inc: { voteCount: 1 },
-    });
+    // Increment photo vote count
+    await this.photoService.incrementVoteCount(photoId);
 
     return {
       success: true,
@@ -122,10 +124,12 @@ export class VotingService {
     };
   }
 
-  async getUserVote(userId: string): Promise<Vote | null> {
-    return await this.voteModel
-      .findOne({ userId: new Types.ObjectId(userId) })
-      .populate("photoId");
+  async getUserVote(userId: string): Promise<{ votedPhotoId?: string; votedAt?: Date }> {
+    const user = await this.usersService.findById(userId);
+    return {
+      votedPhotoId: user?.votedPhotoId?.toString(),
+      votedAt: user?.votedAt,
+    };
   }
 
   async getVotingAnalytics(user: User): Promise<any> {
@@ -133,10 +137,11 @@ export class VotingService {
       throw new ForbiddenException("Only admin can view analytics");
     }
 
-    const [totalVotes, photosWithVotes, settings] = await Promise.all([
-      this.voteModel.countDocuments(),
+    const [totalVotes, photosWithVotes, settings, allUsers] = await Promise.all([
+      this.userModel.countDocuments({ votedPhotoId: { $ne: null } }),
       this.photoModel.find().sort({ voteCount: -1 }),
       this.getVotingSettings(),
+      this.userModel.find({ votedPhotoId: { $ne: null } }).populate('votedPhotoId'),
     ]);
 
     const photosWithRegeneratedUrls = await Promise.all(
@@ -149,12 +154,16 @@ export class VotingService {
         participantEmail: photo.participantEmail,
         isWinner: photo.isWinner,
         winnerPosition: photo.winnerPosition,
+        voters: allUsers
+          .filter(u => u.votedPhotoId && u.votedPhotoId.toString() === photo._id.toString())
+          .map(u => ({ email: u.email, name: u.name, votedAt: u.votedAt }))
       })),
     );
 
     return {
       totalVotes,
       totalPhotos: photosWithVotes.length,
+      totalUsers: allUsers.length,
       photosWithVotes: photosWithRegeneratedUrls,
       votingSettings: settings,
     };
@@ -214,5 +223,32 @@ export class VotingService {
         winnerPosition: photo.winnerPosition,
       })),
     );
+  }
+
+  // NEW: Reset everything
+  async resetVoting(user: User): Promise<{ success: boolean; message: string }> {
+    if (user.role !== Role.ADMIN && user.email !== "abir.ashab@cefalo.com") {
+      throw new ForbiddenException("Only admin can reset voting");
+    }
+
+    // Reset voting settings
+    await this.updateVotingSettings(user, {
+      isVotingActive: false,
+      votingStartTime: null,
+      votingEndTime: null,
+      winners: [],
+      resultsPublished: false,
+    });
+
+    // Reset all user votes
+    await this.usersService.resetAllVotes();
+
+    // Reset all photo vote counts and winner status
+    await this.photoService.resetAllPhotos();
+
+    return {
+      success: true,
+      message: "Voting system reset successfully",
+    };
   }
 }

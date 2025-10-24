@@ -21,8 +21,8 @@ export interface Vote {
 
 export interface VotingSettings {
     isVotingActive: boolean;
-    votingStartTime?: string;
-    votingEndTime?: string;
+    votingStartTime?: Date;
+    votingEndTime?: Date;
     winners: string[];
     resultsPublished: boolean;
     maxVotesPerUser: number;

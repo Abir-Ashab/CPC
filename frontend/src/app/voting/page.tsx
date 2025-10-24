@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import PhotoCard from '@/components/modules/photo/PhotoCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +22,6 @@ function Voting() {
     const {
         photos,
         settings,
-        userVote,
         canVote,
         hasVoted,
         votedPhotoId,

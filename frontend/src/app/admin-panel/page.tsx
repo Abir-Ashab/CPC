@@ -1,27 +1,40 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAnalytics, useStartVoting, useStopVoting, useDeclareWinners, useVotingStats } from '@/hooks/useAdmin';
 import {
-    Settings,
+    useAnalytics,
+    useStartVoting,
+    useStopVoting,
+    useDeclareWinners,
+    useVotingStats,
+    useUpdateVotingSettings,
+    useResetVoting
+} from '@/hooks/useAdmin';
+import {
     Play,
     Square,
     Trophy,
     Users,
     Heart,
-    TrendingUp,
     AlertCircle,
     RefreshCcw,
     Crown,
     CheckCircle,
     Clock,
-    BarChart3
+    BarChart3,
+    Calendar,
+    Eye,
+    EyeOff,
+    RotateCcw
 } from 'lucide-react';
 import { withAuth } from '@/utils/withAuth';
 import { UserRole } from '@/types';
+import { toast } from 'sonner';
+import { VotingSettingsDialog } from '@/components/modules/voting-settings/VotingSettingsDialog';
+import { ResetConfirmationDialog } from '@/components/modules/voting-settings/ResetConfirmationDialog';
 
 interface PhotoWithVotes {
     id: string;
@@ -34,33 +47,85 @@ interface PhotoWithVotes {
 }
 
 function AdminDashboard() {
-
     const { data: analytics, isLoading, error, refetch } = useAnalytics();
     const { mutateAsync: startVotingMutation } = useStartVoting();
     const { mutateAsync: stopVotingMutation } = useStopVoting();
     const { mutateAsync: declareWinnersMutation } = useDeclareWinners();
+    const { mutateAsync: updateVotingSettingsMutation } = useUpdateVotingSettings();
+    const { mutateAsync: resetVotingMutation } = useResetVoting();
     const votingStats = useVotingStats();
 
     const [selectedWinners, setSelectedWinners] = useState<string[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+    const [showResetDialog, setShowResetDialog] = useState(false);
+
+    // Auto-refresh countdown for voting end time
+    const [timeLeft, setTimeLeft] = useState<string>('');
+
+    useEffect(() => {
+        if (analytics?.votingSettings?.votingEndTime) {
+            const endTime = new Date(analytics.votingSettings.votingEndTime).getTime();
+            const updateCountdown = () => {
+                const now = new Date().getTime();
+                const distance = endTime - now;
+
+                if (distance <= 0) {
+                    setTimeLeft('Voting ended');
+                    return;
+                }
+
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+            };
+
+            updateCountdown();
+            const interval = setInterval(updateCountdown, 1000);
+            return () => clearInterval(interval);
+        }
+    }, [analytics?.votingSettings?.votingEndTime]);
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
         try {
             await refetch();
+            toast.success('Data refreshed successfully');
+        } catch (err) {
+            toast.error('Failed to refresh data');
         } finally {
             setIsRefreshing(false);
         }
     };
 
-    const handleStartVoting = async () => {
+    const handleStartVoting = async (settings?: { startTime?: Date; durationHours?: number }) => {
         setActionLoading('start');
         try {
-            await startVotingMutation();
+            if (settings) {
+                // Schedule voting
+                const endTime = settings.startTime
+                    ? new Date(settings.startTime.getTime() + (settings.durationHours || 24) * 60 * 60 * 1000)
+                    : new Date(Date.now() + (settings.durationHours || 24) * 60 * 60 * 1000);
+
+                await updateVotingSettingsMutation({
+                    isVotingActive: true,
+                    votingStartTime: settings.startTime || new Date(),
+                    votingEndTime: endTime,
+                });
+                toast.success(`Voting scheduled successfully! Ends in ${settings.durationHours || 24} hours`);
+            } else {
+                await startVotingMutation();
+                toast.success('Voting started successfully!');
+            }
             await refetch();
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to start voting');
         } finally {
             setActionLoading(null);
+            setShowSettingsDialog(false);
         }
     };
 
@@ -68,7 +133,43 @@ function AdminDashboard() {
         setActionLoading('stop');
         try {
             await stopVotingMutation();
+            toast.success('Voting stopped successfully!');
             await refetch();
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to stop voting');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleExtendVoting = async (additionalHours: number) => {
+        if (!analytics?.votingSettings?.votingEndTime) return;
+
+        try {
+            const currentEndTime = new Date(analytics.votingSettings.votingEndTime);
+            const newEndTime = new Date(currentEndTime.getTime() + additionalHours * 60 * 60 * 1000);
+
+            await updateVotingSettingsMutation({
+                votingEndTime: newEndTime,
+            });
+
+            toast.success(`Voting extended by ${additionalHours} hours!`);
+            await refetch();
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to extend voting');
+        }
+    };
+
+    const handleToggleResults = async (publish: boolean) => {
+        setActionLoading(publish ? 'publish' : 'unpublish');
+        try {
+            await updateVotingSettingsMutation({
+                resultsPublished: publish,
+            });
+            toast.success(publish ? 'Results published successfully!' : 'Results unpublished successfully!');
+            await refetch();
+        } catch (err: any) {
+            toast.error(err.message || `Failed to ${publish ? 'publish' : 'unpublish'} results`);
         } finally {
             setActionLoading(null);
         }
@@ -87,28 +188,47 @@ function AdminDashboard() {
 
     const handleDeclareWinners = async () => {
         if (selectedWinners.length !== 3) {
-            alert('Please select exactly 3 winners');
+            toast.error('Please select exactly 3 winners');
             return;
         }
 
         setActionLoading('winners');
         try {
             await declareWinnersMutation(selectedWinners);
+            toast.success('Winners declared successfully!');
             await refetch();
             setSelectedWinners([]);
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to declare winners');
         } finally {
             setActionLoading(null);
         }
     };
 
+    const handleResetVoting = async () => {
+        setActionLoading('reset');
+        try {
+            await resetVotingMutation();
+            toast.success('Voting system reset successfully!');
+            await refetch();
+            setSelectedWinners([]);
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to reset voting');
+        } finally {
+            setActionLoading(null);
+            setShowResetDialog(false);
+        }
+    };
+
     const votingActive = votingStats.votingActive;
     const resultsPublished = analytics?.votingSettings?.resultsPublished || false;
+    const votingEndTime = analytics?.votingSettings?.votingEndTime;
     const topPhotos = analytics?.photosWithVotes
         .sort((a, b) => b.voteCount - a.voteCount)
         .slice(0, 10) || [];
-        
+
     return (
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto p-6">
             {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
@@ -121,15 +241,26 @@ function AdminDashboard() {
                         </p>
                     </div>
 
-                    <Button
-                        onClick={handleRefresh}
-                        variant="outline"
-                        disabled={isRefreshing}
-                        className="flex items-center"
-                    >
-                        <RefreshCcw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            onClick={handleRefresh}
+                            variant="outline"
+                            disabled={isRefreshing}
+                            className="flex items-center"
+                        >
+                            <RefreshCcw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
+
+                        <Button
+                            onClick={() => setShowResetDialog(true)}
+                            variant="outline"
+                            className="flex items-center text-red-600 border-red-200 hover:bg-red-50"
+                        >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Reset
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Status */}
@@ -143,12 +274,19 @@ function AdminDashboard() {
                         <Trophy className="h-4 w-4 mr-1" />
                         {resultsPublished ? 'Results Published' : 'Results Pending'}
                     </Badge>
+
+                    {votingActive && timeLeft && (
+                        <Badge variant="destructive" className="px-3 py-1">
+                            <Calendar className="h-4 w-4 mr-1" />
+                            Ends in: {timeLeft}
+                        </Badge>
+                    )}
                 </div>
             </div>
 
             {/* Error Display */}
             {error instanceof Error && (
-                <Alert className="bg-red-50 border-red-200 mb-6" variant="destructive">
+                <Alert className="bg-red-50 border-red-200 mb-6">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="flex items-center justify-between">
                         <span>{error.message}</span>
@@ -177,7 +315,7 @@ function AdminDashboard() {
             {analytics && (
                 <>
                     {/* Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Total Votes</CardTitle>
@@ -206,19 +344,6 @@ function AdminDashboard() {
 
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Average Votes</CardTitle>
-                                <TrendingUp className="h-4 w-4 text-green-500" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{votingStats.averageVotes.toFixed(1)}</div>
-                                <p className="text-xs text-muted-foreground">
-                                    Per photo
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Status</CardTitle>
                                 <BarChart3 className="h-4 w-4 text-purple-500" />
                             </CardHeader>
@@ -237,41 +362,62 @@ function AdminDashboard() {
                     <Card className="mb-8">
                         <CardHeader>
                             <CardTitle className="flex items-center">
-                                <Settings className="h-5 w-5 mr-2" />
+                                <BarChart3 className="h-5 w-5 mr-2" />
                                 Voting Controls
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="space-y-4">
                             <div className="flex flex-wrap gap-4">
-                                <Button
-                                    onClick={handleStartVoting}
-                                    disabled={votingActive || actionLoading === 'start'}
-                                    className="flex items-center"
-                                    variant={votingActive ? "secondary" : "default"}
-                                >
-                                    {actionLoading === 'start' ? (
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                    ) : (
-                                        <Play className="h-4 w-4 mr-2" />
-                                    )}
-                                    {votingActive ? 'Voting Active' : 'Start Voting'}
-                                </Button>
+                                {!votingActive ? (
+                                    <Button
+                                        onClick={() => setShowSettingsDialog(true)}
+                                        disabled={actionLoading === 'start'}
+                                        className="flex items-center"
+                                    >
+                                        {actionLoading === 'start' ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        ) : (
+                                            <Play className="h-4 w-4 mr-2" />
+                                        )}
+                                        Start Voting
+                                    </Button>
+                                ) : (
+                                    <>
+                                        <Button
+                                            onClick={handleStopVoting}
+                                            disabled={actionLoading === 'stop'}
+                                            variant="destructive"
+                                            className="flex items-center"
+                                        >
+                                            {actionLoading === 'stop' ? (
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            ) : (
+                                                <Square className="h-4 w-4 mr-2" />
+                                            )}
+                                            Stop Voting
+                                        </Button>
 
-                                <Button
-                                    onClick={handleStopVoting}
-                                    disabled={!votingActive || actionLoading === 'stop'}
-                                    variant={!votingActive ? "secondary" : "destructive"}
-                                    className="flex items-center"
-                                >
-                                    {actionLoading === 'stop' ? (
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                    ) : (
-                                        <Square className="h-4 w-4 mr-2" />
-                                    )}
-                                    Stop Voting
-                                </Button>
+                                        <Button
+                                            onClick={() => handleExtendVoting(1)}
+                                            variant="outline"
+                                            className="flex items-center"
+                                        >
+                                            <Clock className="h-4 w-4 mr-2" />
+                                            Extend 1 Hour
+                                        </Button>
 
-                                {!votingActive && !resultsPublished && (
+                                        <Button
+                                            onClick={() => handleExtendVoting(24)}
+                                            variant="outline"
+                                            className="flex items-center"
+                                        >
+                                            <Calendar className="h-4 w-4 mr-2" />
+                                            Extend 24 Hours
+                                        </Button>
+                                    </>
+                                )}
+
+                                {!votingActive && analytics.photosWithVotes.length > 0 && (
                                     <Button
                                         onClick={handleDeclareWinners}
                                         disabled={selectedWinners.length !== 3 || actionLoading === 'winners'}
@@ -286,16 +432,40 @@ function AdminDashboard() {
                                     </Button>
                                 )}
 
-                                {resultsPublished && (
-                                    <Badge className="bg-green-600 text-white px-4 py-2">
-                                        <CheckCircle className="h-4 w-4 mr-2" />
-                                        Winners Declared
-                                    </Badge>
+                                {resultsPublished ? (
+                                    <Button
+                                        onClick={() => handleToggleResults(false)}
+                                        disabled={actionLoading === 'unpublish'}
+                                        variant="outline"
+                                        className="flex items-center"
+                                    >
+                                        {actionLoading === 'unpublish' ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        ) : (
+                                            <EyeOff className="h-4 w-4 mr-2" />
+                                        )}
+                                        Unpublish Results
+                                    </Button>
+                                ) : (
+                                    analytics.votingSettings.winners.length === 3 && (
+                                        <Button
+                                            onClick={() => handleToggleResults(true)}
+                                            disabled={actionLoading === 'publish'}
+                                            className="flex items-center bg-green-600 hover:bg-green-700"
+                                        >
+                                            {actionLoading === 'publish' ? (
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            ) : (
+                                                <Eye className="h-4 w-4 mr-2" />
+                                            )}
+                                            Publish Results
+                                        </Button>
+                                    )
                                 )}
                             </div>
 
-                            {!votingActive && !resultsPublished && (
-                                <Alert className="mt-4 bg-blue-50 border-blue-200">
+                            {!votingActive && !resultsPublished && analytics.photosWithVotes.length > 0 && (
+                                <Alert className="bg-blue-50 border-blue-200">
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertDescription>
                                         Select exactly 3 photos below to declare as winners (1st, 2nd, 3rd place).
@@ -310,7 +480,7 @@ function AdminDashboard() {
                         <CardHeader>
                             <CardTitle className="flex items-center">
                                 <Trophy className="h-5 w-5 mr-2" />
-                                Photo Rankings
+                                Photo Rankings {votingActive && '(Live)'}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -320,12 +490,12 @@ function AdminDashboard() {
                                         <div
                                             key={photo.id}
                                             className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all cursor-pointer ${selectedWinners.includes(photo.id)
-                                                ? 'border-yellow-300 bg-yellow-50'
-                                                : photo.isWinner
-                                                    ? 'border-green-300 bg-green-50'
-                                                    : 'border-gray-200 hover:border-gray-300'
+                                                    ? 'border-yellow-300 bg-yellow-50'
+                                                    : photo.isWinner
+                                                        ? 'border-green-300 bg-green-50'
+                                                        : 'border-gray-200 hover:border-gray-300'
                                                 }`}
-                                            onClick={() => !resultsPublished && handleWinnerSelection(photo.id)}
+                                            onClick={() => !resultsPublished && !votingActive && handleWinnerSelection(photo.id)}
                                         >
                                             <div className="text-lg font-bold text-gray-400 w-8 text-center">
                                                 #{index + 1}
@@ -375,6 +545,21 @@ function AdminDashboard() {
                     </Card>
                 </>
             )}
+
+            {/* Dialogs */}
+            <VotingSettingsDialog
+                open={showSettingsDialog}
+                onOpenChange={setShowSettingsDialog}
+                onStartVoting={handleStartVoting}
+                loading={actionLoading === 'start'}
+            />
+
+            <ResetConfirmationDialog
+                open={showResetDialog}
+                onOpenChange={setShowResetDialog}
+                onConfirm={handleResetVoting}
+                loading={actionLoading === 'reset'}
+            />
         </div>
     );
 }

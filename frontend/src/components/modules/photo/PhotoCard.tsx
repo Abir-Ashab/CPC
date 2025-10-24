@@ -80,7 +80,6 @@ export default function PhotoCard({
                     {photo.name}
                 </h3>
 
-                {/* Participant Info - Only show for admins */}
                 {photo.participantName && user?.role === 'ADMIN' && (
                     <div className="flex items-center text-sm text-gray-600 mb-2">
                         <User className="h-4 w-4 mr-1" />
@@ -88,9 +87,16 @@ export default function PhotoCard({
                     </div>
                 )}
 
-                <div className="flex items-center text-sm text-gray-500 mb-3">
-                    <Clock className="h-4 w-4 mr-1" />
-                    <span>{new Date(photo.uploadedAt).toLocaleDateString()}</span>
+                <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                    <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-1" />
+                        <span>{new Date(photo.uploadedAt).toLocaleDateString()}</span>
+                    </div>
+                    {photo.category && (
+                        <Badge variant="outline" className="text-xs">
+                            {photo.category} 
+                        </Badge>
+                    )}
                 </div>
 
                 <div className="flex items-center justify-between">

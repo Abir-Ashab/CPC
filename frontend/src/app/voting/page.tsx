@@ -1,20 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import PhotoCard from '@/components/modules/photo/PhotoCard';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useVotingState, useVote, usePhotos } from '@/hooks/useVoting';
 import { Photo } from '@/services/votingApi';
 import {
     Trophy,
-    Clock,
-    Users,
-    Heart,
     AlertCircle,
     CheckCircle,
-    RefreshCcw
+    Filter
 } from 'lucide-react';
 import { withAuth } from '@/utils/withAuth';
 
@@ -31,78 +27,54 @@ function Voting() {
 
     const { isLoading, error, refetch } = usePhotos();
     const voteMutation = useVote();
-    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<string>('All');
+
+    const categories = ['All', 'Cefalo', 'Nature', 'Cityscape'];
+    const categoryLabels: { [key: string]: string } = {
+        'All': 'All',
+        'Cefalo': 'Cefalo',
+        'Nature': 'Nature',
+        'Cityscape': 'Cityscape'
+    };
+
+    const filteredPhotos = selectedCategory === 'All' 
+        ? photos 
+        : photos.filter((photo: Photo) => photo.category === selectedCategory);
 
     const handleVote = async (photoId: string) => {
         try {
             await voteMutation.mutateAsync(photoId);
-            await refetch(); // Refresh the photos after voting
+            await refetch();
             return true;
         } catch (error) {
             return false;
         }
     };
 
-    const handleRefresh = async () => {
-        setIsRefreshing(true);
-        try {
-            await refetch();
-        } finally {
-            setIsRefreshing(false);
-        }
-    };
-
     return (
         <div className="max-w-7xl mx-auto">
-            {/* Header */}
             <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                            Photography Contest
-                        </h1>
-                        <p className="text-gray-600">
-                            Vote for your favorite photo
-                        </p>
-                    </div>
 
-                    <Button
-                        onClick={handleRefresh}
-                        variant="outline"
-                        disabled={isRefreshing}
-                        className="flex items-center"
-                    >
-                        <RefreshCcw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
+
+                <div className="mb-6">
+                        <div className="flex flex-wrap gap-2">
+                            {categories.map((category) => {
+                                const categoryName = category || 'Unknown';
+                                return (
+                                    <Button
+                                        key={categoryName}
+                                        onClick={() => setSelectedCategory(categoryName)}
+                                        variant={selectedCategory === categoryName ? "default" : "outline"}
+                                        size="sm"
+                                        className="text-sm"
+                                    >
+                                        {categoryLabels[categoryName] || categoryName}
+                                    </Button>
+                                );
+                            })}
+                        </div>
                 </div>
 
-                {/* Voting Status */}
-                <div className="flex flex-wrap gap-4 mb-6">
-                    <Badge variant={votingActive ? "default" : "secondary"} className="px-3 py-1">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {votingActive ? 'Voting Active' : 'Voting Closed'}
-                    </Badge>
-
-                    <Badge variant="outline" className="px-3 py-1">
-                        <Users className="h-4 w-4 mr-1" />
-                        {photos.length} Photos
-                    </Badge>
-
-                    <Badge variant="outline" className="px-3 py-1">
-                        <Heart className="h-4 w-4 mr-1" />
-                        {totalVotes} Total Votes
-                    </Badge>
-
-                    {hasVoted && (
-                        <Badge variant="default" className="bg-green-600 px-3 py-1">
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            You have voted
-                        </Badge>
-                    )}
-                </div>
-
-                {/* Voting Instructions */}
                 {!hasVoted && votingActive && (
                     <Alert className="bg-blue-50 border-blue-200">
                         <AlertCircle className="h-4 w-4" />
@@ -168,21 +140,30 @@ function Voting() {
                 </div>
             )}
 
-            {/* Photo Grid */}
             {photos.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {photos.map((photo: Photo) => (
-                        <PhotoCard
-                            key={photo.id}
-                            photo={photo}
-                            onVote={handleVote}
-                            canVote={!!canVote}
-                            hasUserVoted={hasVoted}
-                            isUserVotedPhoto={photo.id === votedPhotoId}
-                            isLoading={voteMutation.isPending || isLoading}
-                        />
-                    ))}
-                </div>
+                <>
+                    {filteredPhotos.length === 0 ? (
+                        <div className="text-center py-12">
+                            <Filter className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No Photos in this Category</h3>
+                            <p className="text-gray-600">Try selecting a different category to see photos.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {filteredPhotos.map((photo: Photo) => (
+                                <PhotoCard
+                                    key={photo.id}
+                                    photo={photo}
+                                    onVote={handleVote}
+                                    canVote={!!canVote}
+                                    hasUserVoted={hasVoted}
+                                    isUserVotedPhoto={photo.id === votedPhotoId}
+                                    isLoading={voteMutation.isPending || isLoading}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </>
             )}
 
             {photos.length > 0 && (

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import PhotoCard from '@/components/modules/photo/PhotoCard';
 import PhotoSlider from '@/components/modules/photo/PhotoSlider';
+import VotingCountdown from '../../components/modules/voting/VotingCountdown';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useVotingState, useVote, usePhotos } from '@/hooks/useVoting';
@@ -19,12 +20,10 @@ function Voting() {
     const {
         photos,
         settings,
-        userVote,
         canVote,
         hasVoted,
         votedPhotoId,
         votingActive,
-        totalVotes
     } = useVotingState();
 
     const { isLoading, error, refetch } = usePhotos();
@@ -66,53 +65,28 @@ function Voting() {
 
     return (
         <div className="max-w-7xl mx-auto">
-            <div className="space-y-4 mb-8">
-                <div className=''>
-                    {!hasVoted && votingActive && (
-                        <Alert className="bg-blue-50 border-blue-200">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>
-                                You can vote for <strong>one photo</strong> only. Choose carefully!
-                            </AlertDescription>
-                        </Alert>
-                    )}
-
-                    {hasVoted && (
-                        <Alert className="bg-green-50 border-green-200">
-                            <CheckCircle className="h-4 w-4" />
-                            <AlertDescription>
-                                Thank you for voting! You voted for "{photos.find((p: Photo) => p.id === votedPhotoId)?.name}".
-                            </AlertDescription>
-                        </Alert>
-                    )}
-
-                    {!votingActive && (
-                        <Alert className="bg-orange-50 border-orange-200">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>
-                                {settings?.resultsPublished
-                                    ? 'Voting has ended. Check the results page to see the winners!'
-                                    : 'Voting is currently not active. Please wait for the voting period to begin.'
-                                }
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                </div>
-                <div className="flex flex-wrap gap-2 ">
-                    {categories.map((category) => {
-                        const categoryName = category || 'Unknown';
-                        return (
-                            <Button
-                                key={categoryName}
-                                onClick={() => setSelectedCategory(categoryName)}
-                                variant={selectedCategory === categoryName ? "default" : "outline"}
-                                size="sm"
-                                className="text-sm"
-                            >
-                                {categoryLabels[categoryName] || categoryName}
-                            </Button>
-                        );
-                    })}
+            <div className="mb-8">
+                <VotingCountdown 
+                    endTime={settings?.votingEndTime} 
+                    isActive={votingActive} 
+                />
+                <div className="mb-6">
+                    <div className="flex flex-wrap gap-2">
+                            {categories.map((category) => {
+                                const categoryName = category || 'Unknown';
+                                return (
+                                    <Button
+                                        key={categoryName}
+                                        onClick={() => setSelectedCategory(categoryName)}
+                                        variant={selectedCategory === categoryName ? "default" : "outline"}
+                                        size="sm"
+                                        className="text-sm"
+                                    >
+                                        {categoryLabels[categoryName] || categoryName}
+                                    </Button>
+                                );
+                            })}
+                        </div>
                 </div>
             </div>
 

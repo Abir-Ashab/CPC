@@ -15,7 +15,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Camera, Trophy, Settings, LogOut, User, Loader2, Users } from 'lucide-react';
 import { withAuth } from '@/utils/withAuth';
-import { Spinner } from './ui/spinner';
 
 interface NavLinkProps {
     href: string;
@@ -25,7 +24,7 @@ interface NavLinkProps {
 
 function NavLink({ href, icon, children }: NavLinkProps) {
     const pathname = usePathname();
-    const isActive = href === pathname || (href === '/admin-panel' && pathname.startsWith('/admin-panel'));
+    const isActive = href === pathname;
 
     return (
         <Link

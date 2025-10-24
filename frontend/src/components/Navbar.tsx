@@ -26,7 +26,7 @@ interface NavLinkProps {
 
 function NavLink({ href, icon, children }: NavLinkProps) {
     const pathname = usePathname();
-    const isActive = href === pathname || (href === '/admin' && pathname.startsWith('/admin'));
+    const isActive = href === pathname || (href === '/admin-panel' && pathname.startsWith('/admin-panel'));
 
     return (
         <Link
@@ -87,7 +87,7 @@ function NavbarComponent() {
                             </NavLink>
 
                             {user?.role === 'ADMIN' && (
-                                <NavLink href="/admin" icon={<Settings className="h-4 w-4" />}>
+                                <NavLink href="/admin-panel" icon={<Settings className="h-4 w-4" />}>
                                     Admin Panel
                                 </NavLink>
                             )}
@@ -141,7 +141,7 @@ function NavbarComponent() {
                                     </DropdownMenuItem>
                                     {user?.role === 'ADMIN' && (
                                         <DropdownMenuItem asChild>
-                                            <Link href="/admin" className="flex items-center">
+                                            <Link href="/admin-panel" className="flex items-center">
                                                 <Settings className="h-4 w-4 mr-2" />
                                                 Admin Panel
                                             </Link>

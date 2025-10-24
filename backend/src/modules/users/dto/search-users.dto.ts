@@ -1,12 +1,11 @@
-import { IsOptional, IsString, IsEnum } from "class-validator";
-import { Role } from "./user.dto";
+import { IsOptional, IsString, } from "class-validator";
 
 export class SearchUsersDto {
   @IsString()
   @IsOptional()
   query?: string;
 
-  @IsEnum(Role)
+  @IsString()
   @IsOptional()
-  role?: Role;
+  role?: string;
 }

@@ -10,7 +10,7 @@ export function HomeComponent() {
     const { user, isLoading } = useUser();
     useEffect(() => {
         if (user) {
-            router.push(user.role === 'ADMIN' ? '/admin' : '/voting');
+            router.push(user.role === 'ADMIN' ? '/admin-panel' : '/voting');
         }
     }, [user, router]);
 

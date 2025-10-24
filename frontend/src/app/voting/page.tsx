@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import PhotoCard from '@/components/PhotoCard';
+import PhotoCard from '@/components/modules/photo/PhotoCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -17,8 +17,9 @@ import {
     CheckCircle,
     RefreshCcw
 } from 'lucide-react';
+import { withAuth } from '@/utils/withAuth';
 
-export default function Voting() {
+function Voting() {
     const {
         photos,
         settings,
@@ -32,8 +33,6 @@ export default function Voting() {
 
     const { isLoading, error, refetch } = usePhotos();
     const voteMutation = useVote();
-
-    const router = useRouter();
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const handleVote = async (photoId: string) => {
@@ -137,7 +136,6 @@ export default function Voting() {
                 )}
             </div>
 
-            {/* Error Display */}
             {error instanceof Error && (
                 <Alert className="bg-red-50 border-red-200 mb-6" variant="destructive">
                     <AlertCircle className="h-4 w-4" />
@@ -155,7 +153,6 @@ export default function Voting() {
                 </Alert>
             )}
 
-            {/* Loading State */}
             {isLoading && photos.length === 0 && (
                 <div className="flex items-center justify-center py-12">
                     <div className="text-center">
@@ -165,7 +162,6 @@ export default function Voting() {
                 </div>
             )}
 
-            {/* No Photos State */}
             {!isLoading && photos.length === 0 && !error && (
                 <div className="text-center py-12">
                     <Trophy className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -191,7 +187,6 @@ export default function Voting() {
                 </div>
             )}
 
-            {/* Footer */}
             {photos.length > 0 && (
                 <div className="mt-12 pt-8 border-t text-center text-gray-500 text-sm">
                     <p>
@@ -207,3 +202,5 @@ export default function Voting() {
         </div>
     );
 }
+
+export default withAuth(Voting);

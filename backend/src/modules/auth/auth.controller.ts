@@ -65,7 +65,7 @@ export class AuthController {
       } else {
         redirectUrl =
           user.role === "ADMIN"
-            ? process.env.FRONTEND_URL + "/admin"
+            ? process.env.FRONTEND_URL + "/admin-panel"
             : process.env.FRONTEND_URL + "/voting";
       }
 

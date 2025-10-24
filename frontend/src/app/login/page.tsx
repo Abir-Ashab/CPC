@@ -18,7 +18,7 @@ export default function Login() {
     useEffect(() => {
         if (user) {
             const redirectUrl = searchParams.get('redirect');
-            router.replace(redirectUrl || (user.role === 'ADMIN' ? '/admin' : '/voting'));
+            router.replace(redirectUrl || (user.role === 'ADMIN' ? '/admin-panel' : '/voting'));
         }
     }, [user, router, searchParams]);
 

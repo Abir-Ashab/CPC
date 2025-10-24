@@ -1,5 +1,5 @@
 import { PartialType } from "@nestjs/mapped-types";
-import { IsEmail, IsOptional, IsString, IsEnum } from "class-validator";
+import { IsEmail, IsOptional, IsString, IsEnum, IsMongoId } from "class-validator";
 export enum Role {
   ADMIN = "ADMIN",
   USER = "USER",
@@ -24,5 +24,9 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   googleId?: string;
+
+  @IsMongoId()
+  @IsOptional()
+  votedPhotoId?: string;
 }
 export class UpdateUserDto extends PartialType(CreateUserDto) {}

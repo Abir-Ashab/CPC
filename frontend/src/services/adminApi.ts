@@ -21,5 +21,15 @@ export const adminApi = {
     declareWinners: async (winnerIds: string[]) => {
         const { data } = await api.post('/voting/winners', { winnerIds });
         return data.success;
+    },
+
+    updateVotingSettings: async (settings: Partial<VotingSettings>) => {
+        const { data } = await api.put('/voting/settings', settings);
+        return data.settings as VotingSettings;
+    },
+
+    resetVoting: async () => {
+        const { data } = await api.post('/voting/reset');
+        return data.success;
     }
 };

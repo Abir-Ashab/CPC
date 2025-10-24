@@ -31,11 +31,13 @@ export class UsersController {
     return this.usersService.findAll(query, role);
   }
   @Get(":id")
+  @Auth()
   async getUser(@Param("id") id: string): Promise<User> {
     return this.usersService.findById(id);
   }
 
   @Patch(":id")
+  @Auth(Role.ADMIN)
   async updateUser(
     @Param("id") id: string,
     @Body() updateUserDto: UpdateUserDto,

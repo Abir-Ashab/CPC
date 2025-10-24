@@ -27,7 +27,13 @@ export default function RootLayout({
               {children}
             </main>
           </div>
-          <Toaster position="top-right" />
+          <Toaster
+            position="top-right"
+            expand={false}
+            richColors
+            closeButton
+            duration={4000}
+          />
         </Providers>
       </body>
     </html>

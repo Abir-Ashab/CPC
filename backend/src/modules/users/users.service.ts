@@ -5,7 +5,7 @@ import { CreateUserDto, UpdateUserDto, Role } from "./dto/user.dto";
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(private readonly usersRepository: UsersRepository) { }
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     if (createUserDto.email === "abir.ashab@cefalo.com") {
@@ -35,5 +35,13 @@ export class UsersService {
     updateData: UpdateUserDto,
   ): Promise<User | null> {
     return this.usersRepository.update(id, updateData);
+  }
+
+  async findVotersByPhotoId(photoId: string): Promise<User[]> {
+    return this.usersRepository.findVotersByPhotoId(photoId);
+  }
+
+  async resetAllVotes(): Promise<void> {
+    return this.usersRepository.resetAllVotes();
   }
 }

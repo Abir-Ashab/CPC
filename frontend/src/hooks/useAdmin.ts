@@ -4,7 +4,8 @@ import { adminApi } from '@/services/adminApi';
 export const useAnalytics = () => {
     return useQuery({
         queryKey: ['analytics'],
-        queryFn: adminApi.getAnalytics
+        queryFn: adminApi.getAnalytics,
+        refetchInterval: 30000, // Auto-refresh every 30 seconds when voting is active
     });
 };
 
@@ -16,6 +17,7 @@ export const useStartVoting = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['votingSettings'] });
             queryClient.invalidateQueries({ queryKey: ['analytics'] });
+            queryClient.invalidateQueries({ queryKey: ['photos'] });
         }
     });
 };
@@ -28,6 +30,7 @@ export const useStopVoting = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['votingSettings'] });
             queryClient.invalidateQueries({ queryKey: ['analytics'] });
+            queryClient.invalidateQueries({ queryKey: ['photos'] });
         }
     });
 };
@@ -40,6 +43,35 @@ export const useDeclareWinners = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['analytics'] });
             queryClient.invalidateQueries({ queryKey: ['winners'] });
+            queryClient.invalidateQueries({ queryKey: ['photos'] });
+        }
+    });
+};
+
+export const useUpdateVotingSettings = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: adminApi.updateVotingSettings,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['votingSettings'] });
+            queryClient.invalidateQueries({ queryKey: ['analytics'] });
+            queryClient.invalidateQueries({ queryKey: ['photos'] });
+        }
+    });
+};
+
+export const useResetVoting = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: adminApi.resetVoting,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['votingSettings'] });
+            queryClient.invalidateQueries({ queryKey: ['analytics'] });
+            queryClient.invalidateQueries({ queryKey: ['photos'] });
+            queryClient.invalidateQueries({ queryKey: ['winners'] });
+            queryClient.invalidateQueries({ queryKey: ['userVote'] });
         }
     });
 };
@@ -53,7 +85,6 @@ export const useVotingStats = () => {
         return {
             totalVotes: 0,
             totalPhotos: 0,
-            averageVotes: 0,
             votingActive: false,
             isLoading: analyticsQuery.isLoading
         };
@@ -61,13 +92,11 @@ export const useVotingStats = () => {
 
     const totalVotes = analytics.totalVotes;
     const totalPhotos = analytics.totalPhotos;
-    const averageVotes = totalPhotos > 0 ? totalVotes / totalPhotos : 0;
     const votingActive = analytics.votingSettings.isVotingActive;
 
     return {
         totalVotes,
         totalPhotos,
-        averageVotes,
         votingActive,
         isLoading: analyticsQuery.isLoading
     };

@@ -83,12 +83,6 @@ function Results() {
             <div className="max-w-4xl mx-auto">
                 <div className="text-center py-16">
                     <Trophy className="h-20 w-20 text-gray-300 mx-auto mb-6" />
-                    <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                        Contest Results
-                    </h1>
-                    <p className="text-lg text-gray-600 mb-8">
-                        Results will be published here once the voting period ends and winners are announced.
-                    </p>
                     <Alert className="bg-blue-50 border-blue-200 max-w-md mx-auto">
                         <Clock className="h-4 w-4" />
                         <AlertDescription>
@@ -102,32 +96,7 @@ function Results() {
 
     return (
         <div className="max-w-7xl mx-auto">
-            {/* Header */}
             <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                            Contest Results
-                        </h1>
-                        <p className="text-gray-600">
-                            {isAdminUser ? 'Admin view - See how the photos performed in the voting' : 'Official contest results'}
-                        </p>
-                    </div>
-
-                    {isAdminUser && (
-                        <Button
-                            onClick={handleRefresh}
-                            variant="outline"
-                            disabled={isRefreshing}
-                            className="flex items-center"
-                        >
-                            <RefreshCcw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                            Refresh
-                        </Button>
-                    )}
-                </div>
-
-                {/* Stats */}
                 <div className="flex flex-wrap gap-4 mb-6">
                     <Badge variant="outline" className="px-3 py-1">
                         <Users className="h-4 w-4 mr-1" />

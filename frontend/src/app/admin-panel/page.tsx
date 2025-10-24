@@ -283,8 +283,6 @@ function AdminDashboard() {
                     )}
                 </div>
             </div>
-
-            {/* Error Display */}
             {error instanceof Error && (
                 <Alert className="bg-red-50 border-red-200 mb-6">
                     <AlertCircle className="h-4 w-4" />
@@ -302,7 +300,6 @@ function AdminDashboard() {
                 </Alert>
             )}
 
-            {/* Loading State */}
             {isLoading && !analytics && (
                 <div className="flex items-center justify-center py-12">
                     <div className="text-center">
@@ -475,7 +472,6 @@ function AdminDashboard() {
                         </CardContent>
                     </Card>
 
-                    {/* Top Photos */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center">

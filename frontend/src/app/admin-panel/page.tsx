@@ -109,30 +109,7 @@ function AdminDashboard() {
         
     return (
         <div className="max-w-7xl mx-auto">
-            {/* Header */}
             <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                            Admin Dashboard
-                        </h1>
-                        <p className="text-gray-600">
-                            Manage voting and view analytics
-                        </p>
-                    </div>
-
-                    <Button
-                        onClick={handleRefresh}
-                        variant="outline"
-                        disabled={isRefreshing}
-                        className="flex items-center"
-                    >
-                        <RefreshCcw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
-                </div>
-
-                {/* Status */}
                 <div className="flex flex-wrap gap-4 mb-6">
                     <Badge variant={votingActive ? "default" : "secondary"} className="px-3 py-1">
                         <Clock className="h-4 w-4 mr-1" />
@@ -145,8 +122,6 @@ function AdminDashboard() {
                     </Badge>
                 </div>
             </div>
-
-            {/* Error Display */}
             {error instanceof Error && (
                 <Alert className="bg-red-50 border-red-200 mb-6" variant="destructive">
                     <AlertCircle className="h-4 w-4" />
@@ -164,7 +139,6 @@ function AdminDashboard() {
                 </Alert>
             )}
 
-            {/* Loading State */}
             {isLoading && !analytics && (
                 <div className="flex items-center justify-center py-12">
                     <div className="text-center">
@@ -176,7 +150,6 @@ function AdminDashboard() {
 
             {analytics && (
                 <>
-                    {/* Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -305,7 +278,6 @@ function AdminDashboard() {
                         </CardContent>
                     </Card>
 
-                    {/* Top Photos */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center">

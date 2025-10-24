@@ -27,7 +27,7 @@ export default function PhotoCard({
     hasUserVoted,
     isUserVotedPhoto,
     isLoading = false,
-    onClick
+    onClick,
     votingActive = true
 }: PhotoCardProps) {
     const [isVoting, setIsVoting] = useState(false);
@@ -82,7 +82,6 @@ export default function PhotoCard({
                 className="relative aspect-square overflow-hidden bg-gray-100 cursor-pointer"
                 onClick={onClick}
             >
-            <div className="relative aspect-square overflow-hidden bg-gray-100">
                 {!imageLoaded && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>

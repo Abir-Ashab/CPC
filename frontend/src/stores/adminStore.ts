@@ -128,7 +128,6 @@ export const useAdminStore = create<AdminState>((set, get) => ({
             const { data } = await api.post('/voting/winners', { winnerIds });
             
             if (data.success) {
-                // Refresh analytics to get updated winner info
                 await get().fetchAnalytics();
                 return true;
             }

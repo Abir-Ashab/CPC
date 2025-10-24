@@ -25,6 +25,9 @@ export class User {
 
   @Prop()
   googleId?: string;
+
+  @Prop({ type: Types.ObjectId, ref: "Photo", required: false })
+  votedPhotoId?: Types.ObjectId;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

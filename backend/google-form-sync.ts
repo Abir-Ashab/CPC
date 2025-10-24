@@ -138,11 +138,7 @@ async function getFormResponsesFromSheet(sheets: any, spreadsheetId: string): Pr
   return submissions;
 }
 
-function extractFileIdsFromCell(cellValue: string): string[] {
-  // Google Forms stores file uploads as URLs like:
-  // https://drive.google.com/open?id=FILE_ID
-  // or comma-separated list of such URLs
-  
+function extractFileIdsFromCell(cellValue: string): string[] {  
   const fileIds: string[] = [];
   const urlPattern = /https:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/g;
   

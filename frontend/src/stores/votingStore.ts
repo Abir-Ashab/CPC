@@ -136,7 +136,6 @@ export const useVotingStore = create<VotingState>((set, get) => ({
         set({ error: null });
     },
 
-    // Helper methods
     canVote: () => {
         const { votingSettings, userVote } = get();
         return !!(votingSettings?.isVotingActive && !userVote);

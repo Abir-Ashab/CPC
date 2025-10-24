@@ -1,82 +1,54 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/authStore';
-import { useVotingStore } from '@/stores/votingStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-    Trophy, 
-    Medal, 
-    Award, 
-    Users, 
-    Heart, 
+import { useVotingState, useWinners, usePhotos } from '@/hooks/useVoting';
+import { Photo } from '@/services/votingApi';
+import {
+    Trophy,
+    Medal,
+    Award,
+    Users,
+    Heart,
     Clock,
     AlertCircle,
     RefreshCcw,
     Crown
 } from 'lucide-react';
+import { useUser } from '@/hooks/useAuth';
+import { withAuth } from '@/utils/withAuth';
 
-export default function Results() {
-    const { user, isAuthenticated, isAdmin, isSuperAdmin } = useAuthStore();
+function Results() {
     const {
         photos,
-        winners,
-        votingSettings,
-        isLoading,
-        error,
-        fetchPhotos,
-        fetchWinners,
-        fetchVotingSettings,
-        clearError
-    } = useVotingStore();
-    
-    const router = useRouter();
+        settings: votingSettings,
+        totalVotes,
+        votingActive
+    } = useVotingState();
+
+    const { data: winners = [] } = useWinners();
+    const { isLoading, error, refetch } = usePhotos();
     const [isRefreshing, setIsRefreshing] = useState(false);
-
-    useEffect(() => {
-        if (!isAuthenticated) {
-            router.push('/login');
-            return;
-        }
-
-        // Fetch initial data
-        const fetchData = async () => {
-            await Promise.all([
-                fetchPhotos(),
-                fetchWinners(),
-                fetchVotingSettings()
-            ]);
-        };
-
-        fetchData();
-    }, [isAuthenticated, router]);
+    const { user } = useUser();
+    const isAdminUser = user?.role === 'ADMIN';
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
         try {
-            await Promise.all([
-                fetchPhotos(),
-                fetchWinners(),
-                fetchVotingSettings()
-            ]);
+            await refetch();
         } finally {
             setIsRefreshing(false);
         }
     };
 
-    if (!isAuthenticated || !user) {
-        return null;
-    }
-
     const sortedPhotos = [...photos].sort((a, b) => b.voteCount - a.voteCount);
     const hasResults = votingSettings?.resultsPublished || false;
-    const totalVotes = photos.reduce((sum, photo) => sum + photo.voteCount, 0);
-    const isAdminUser = isAdmin() || isSuperAdmin();
-    const canViewResults = isAdminUser || hasResults;
+    const calcTotalVotes = photos.reduce((sum: number, photo: Photo) => sum + photo.voteCount, 0);
+    const canViewResults = user?.role === 'ADMIN' || hasResults;
 
     const getPositionIcon = (position: number) => {
         switch (position) {
@@ -93,10 +65,10 @@ export default function Results() {
             { bg: 'bg-gray-400', text: 'text-white', label: '2nd Place' },
             { bg: 'bg-orange-600', text: 'text-white', label: '3rd Place' }
         ];
-        
+
         const config = configs[position - 1];
         if (!config) return null;
-        
+
         return (
             <Badge className={`${config.bg} ${config.text} px-3 py-1`}>
                 {getPositionIcon(position)}
@@ -141,7 +113,7 @@ export default function Results() {
                             {isAdminUser ? 'Admin view - See how the photos performed in the voting' : 'Official contest results'}
                         </p>
                     </div>
-                    
+
                     {isAdminUser && (
                         <Button
                             onClick={handleRefresh}
@@ -161,12 +133,12 @@ export default function Results() {
                         <Users className="h-4 w-4 mr-1" />
                         {photos.length} Photos
                     </Badge>
-                    
+
                     <Badge variant="outline" className="px-3 py-1">
                         <Heart className="h-4 w-4 mr-1" />
-                        {totalVotes} Total Votes
+                        {calcTotalVotes} Total Votes
                     </Badge>
-                    
+
                     <Badge variant={hasResults ? "default" : "secondary"} className="px-3 py-1">
                         <Trophy className="h-4 w-4 mr-1" />
                         {hasResults ? 'Final Results' : 'Live Results'}
@@ -178,7 +150,7 @@ export default function Results() {
                     <Alert className="bg-blue-50 border-blue-200 mb-6">
                         <Clock className="h-4 w-4" />
                         <AlertDescription>
-                            {votingSettings?.isVotingActive 
+                            {votingSettings?.isVotingActive
                                 ? 'Voting is still active. These are live results that may change.'
                                 : 'Voting has ended but winners have not been officially announced yet.'
                             }
@@ -197,18 +169,18 @@ export default function Results() {
             </div>
 
             {/* Error Display */}
-            {error && (
+            {error instanceof Error && (
                 <Alert className="bg-red-50 border-red-200 mb-6" variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="flex items-center justify-between">
-                        <span>{error}</span>
-                        <Button 
-                            onClick={clearError} 
-                            variant="ghost" 
+                        <span>{error.message}</span>
+                        <Button
+                            onClick={() => refetch()}
+                            variant="ghost"
                             size="sm"
                             className="text-red-600 hover:text-red-800"
                         >
-                            Dismiss
+                            Retry
                         </Button>
                     </AlertDescription>
                 </Alert>
@@ -231,12 +203,12 @@ export default function Results() {
                         🏆 Official Winners 🏆
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        {winners.map((winner) => (
+                        {winners.map((winner: Photo) => (
                             <Card key={winner.id} className="relative overflow-hidden border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
                                 <div className="absolute top-4 left-4 z-10">
                                     {getPositionBadge(winner.winnerPosition || 1)}
                                 </div>
-                                
+
                                 <div className="aspect-square relative overflow-hidden">
                                     <img
                                         src={winner.url}
@@ -244,7 +216,7 @@ export default function Results() {
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
-                                
+
                                 <CardContent className="p-6">
                                     <h3 className="font-bold text-lg mb-2">{winner.name}</h3>
                                     {winner.participantName && isAdminUser && (
@@ -268,13 +240,12 @@ export default function Results() {
                 <h2 className="text-xl font-bold text-gray-900 mb-6">
                     {hasResults ? 'Final Standings' : 'Current Standings'}
                 </h2>
-                
+
                 {photos.length > 0 ? (
                     <div className="space-y-4">
                         {sortedPhotos.map((photo, index) => (
-                            <Card key={photo.id} className={`${
-                                photo.isWinner ? 'border-yellow-300 bg-yellow-50' : ''
-                            }`}>
+                            <Card key={photo.id} className={`${photo.isWinner ? 'border-yellow-300 bg-yellow-50' : ''
+                                }`}>
                                 <CardContent className="p-6">
                                     <div className="flex items-center gap-6">
                                         <div className="flex-shrink-0 text-center">
@@ -291,7 +262,7 @@ export default function Results() {
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
-                                        
+
                                         {/* Info */}
                                         <div className="flex-grow min-w-0">
                                             <h3 className="font-semibold text-lg mb-1 truncate">
@@ -306,7 +277,7 @@ export default function Results() {
                                                 Uploaded {new Date(photo.uploadedAt).toLocaleDateString()}
                                             </div>
                                         </div>
-                                        
+
                                         {/* Votes */}
                                         <div className="flex-shrink-0 text-right">
                                             <div className="flex items-center text-lg font-semibold">
@@ -314,8 +285,8 @@ export default function Results() {
                                                 {photo.voteCount}
                                             </div>
                                             <div className="text-sm text-gray-500">
-                                                {totalVotes > 0 ? 
-                                                    `${((photo.voteCount / totalVotes) * 100).toFixed(1)}%` 
+                                                {totalVotes > 0 ?
+                                                    `${((photo.voteCount / totalVotes) * 100).toFixed(1)}%`
                                                     : '0%'
                                                 }
                                             </div>
@@ -341,3 +312,5 @@ export default function Results() {
         </div>
     );
 }
+
+export default withAuth(Results);

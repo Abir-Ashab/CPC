@@ -8,15 +8,14 @@ export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    // Set admin role for super admin email
-    if (createUserDto.email === 'abir.ashab@cefalo.com') {
+    if (createUserDto.email === "abir.ashab@cefalo.com") {
       createUserDto.role = Role.ADMIN;
     }
     return this.usersRepository.create(createUserDto);
   }
 
-  async findAll(): Promise<User[]> {
-    return this.usersRepository.findAll();
+  async findAll(query?: string, role?: string): Promise<User[]> {
+    return this.usersRepository.findAll(query, role);
   }
 
   async findByEmail(email: string): Promise<User | null> {

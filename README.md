@@ -1,22 +1,29 @@
-# Photo Upload Application
+# Photo Contest Application (CPC)
 
-A full-stack photo upload application with anonymous gallery viewing. Users can upload photos with their name, but the gallery displays photos anonymously.
+A full-stack photo contest application with authentication, voting system, and admin management. Built for competitive photo contests with user engagement and real-time results.
 
-## Architecture
+## 🏗️ Architecture
 
-- **Frontend**: Next.js 14 with TypeScript and Tailwind CSS
-- **Backend**: NestJS with TypeScript
-- **Database**: MongoDB for photo metadata
-- **Storage**: MinIO for object storage
-- **Container**: Docker Compose for orchestration
+- **Frontend**: Next.js 14 with TypeScript, Tailwind CSS, and shadcn/ui
+- **Backend**: NestJS with TypeScript and modular architecture
+- **Database**: MongoDB with Mongoose ODM
+- **Storage**: MinIO (S3-compatible) for photo storage
+- **Authentication**: Google OAuth with JWT tokens
+- **State Management**: Zustand stores
+- **Data Fetching**: React Query for caching and synchronization
+- **Container**: Docker Compose for full-stack orchestration
 
-## Features
+## ✨ Features
 
-- 📸 Photo upload with drag & drop support
-- 👤 User name tracking (stored but not displayed)
-- 🖼️ Anonymous photo gallery
-- 🗑️ Photo deletion
-- 🐳 Fully containerized with Docker
+- 🔐 **Google OAuth Authentication** - Secure login with Google accounts
+- 📸 **Photo Upload & Management** - Drag & drop upload with file validation
+- �️ **Voting System** - Like/dislike voting with user restrictions
+- 👑 **Admin Dashboard** - Contest management and settings control
+- 📊 **Real-time Results** - Live voting statistics and leaderboards
+- � **Google Sheets Integration** - Data synchronization with external sheets
+- � **Responsive Design** - Mobile-first approach with modern UI
+- 🛡️ **Role-based Access** - User and admin role management
+- 🐳 **Full Docker Support** - Complete containerized development environment
 
 ## Project Structure
 

@@ -1,20 +1,17 @@
 'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/authStore';
-import { useAdminStore } from '@/stores/adminStore';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-    Settings, 
-    Play, 
-    Square, 
-    Trophy, 
-    Users, 
-    Heart, 
+import { useAnalytics, useStartVoting, useStopVoting, useDeclareWinners, useVotingStats } from '@/hooks/useAdmin';
+import {
+    Settings,
+    Play,
+    Square,
+    Trophy,
+    Users,
+    Heart,
     TrendingUp,
     AlertCircle,
     RefreshCcw,
@@ -23,46 +20,35 @@ import {
     Clock,
     BarChart3
 } from 'lucide-react';
+import { withAuth } from '@/utils/withAuth';
+import { UserRole } from '@/types';
 
-export default function AdminDashboard() {
-    const { user, isAuthenticated, canManageVoting } = useAuthStore();
-    const {
-        analytics,
-        isLoading,
-        error,
-        fetchAnalytics,
-        startVoting,
-        stopVoting,
-        declareWinners,
-        clearError,
-        getTopPhotos,
-        getVotingStats
-    } = useAdminStore();
-    
-    const router = useRouter();
+interface PhotoWithVotes {
+    id: string;
+    name: string;
+    voteCount: number;
+    participantName?: string;
+    participantEmail?: string;
+    isWinner: boolean;
+    winnerPosition?: number;
+}
+
+function AdminDashboard() {
+
+    const { data: analytics, isLoading, error, refetch } = useAnalytics();
+    const { mutateAsync: startVotingMutation } = useStartVoting();
+    const { mutateAsync: stopVotingMutation } = useStopVoting();
+    const { mutateAsync: declareWinnersMutation } = useDeclareWinners();
+    const votingStats = useVotingStats();
+
     const [selectedWinners, setSelectedWinners] = useState<string[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (!isAuthenticated) {
-            router.push('/login');
-            return;
-        }
-
-        if (!canManageVoting()) {
-            router.push('/voting');
-            return;
-        }
-
-        // Fetch initial data
-        fetchAnalytics();
-    }, [isAuthenticated, canManageVoting, router]);
-
     const handleRefresh = async () => {
         setIsRefreshing(true);
         try {
-            await fetchAnalytics();
+            await refetch();
         } finally {
             setIsRefreshing(false);
         }
@@ -71,10 +57,8 @@ export default function AdminDashboard() {
     const handleStartVoting = async () => {
         setActionLoading('start');
         try {
-            const success = await startVoting();
-            if (success) {
-                // Success feedback will be shown via updated analytics
-            }
+            await startVotingMutation();
+            await refetch();
         } finally {
             setActionLoading(null);
         }
@@ -83,19 +67,17 @@ export default function AdminDashboard() {
     const handleStopVoting = async () => {
         setActionLoading('stop');
         try {
-            const success = await stopVoting();
-            if (success) {
-                // Success feedback will be shown via updated analytics
-            }
+            await stopVotingMutation();
+            await refetch();
         } finally {
             setActionLoading(null);
         }
     };
 
     const handleWinnerSelection = (photoId: string) => {
-        setSelectedWinners(prev => {
+        setSelectedWinners((prev) => {
             if (prev.includes(photoId)) {
-                return prev.filter(id => id !== photoId);
+                return prev.filter((id) => id !== photoId);
             } else if (prev.length < 3) {
                 return [...prev, photoId];
             }
@@ -111,24 +93,20 @@ export default function AdminDashboard() {
 
         setActionLoading('winners');
         try {
-            const success = await declareWinners(selectedWinners);
-            if (success) {
-                setSelectedWinners([]);
-            }
+            await declareWinnersMutation(selectedWinners);
+            await refetch();
+            setSelectedWinners([]);
         } finally {
             setActionLoading(null);
         }
     };
 
-    if (!isAuthenticated || !user || !canManageVoting()) {
-        return null;
-    }
-
-    const stats = getVotingStats();
-    const topPhotos = getTopPhotos(10);
-    const votingActive = stats.votingActive;
+    const votingActive = votingStats.votingActive;
     const resultsPublished = analytics?.votingSettings?.resultsPublished || false;
-
+    const topPhotos = analytics?.photosWithVotes
+        .sort((a, b) => b.voteCount - a.voteCount)
+        .slice(0, 10) || [];
+        
     return (
         <div className="max-w-7xl mx-auto">
             {/* Header */}
@@ -142,7 +120,7 @@ export default function AdminDashboard() {
                             Manage voting and view analytics
                         </p>
                     </div>
-                    
+
                     <Button
                         onClick={handleRefresh}
                         variant="outline"
@@ -160,7 +138,7 @@ export default function AdminDashboard() {
                         <Clock className="h-4 w-4 mr-1" />
                         {votingActive ? 'Voting Active' : 'Voting Inactive'}
                     </Badge>
-                    
+
                     <Badge variant={resultsPublished ? "default" : "outline"} className="px-3 py-1">
                         <Trophy className="h-4 w-4 mr-1" />
                         {resultsPublished ? 'Results Published' : 'Results Pending'}
@@ -169,18 +147,18 @@ export default function AdminDashboard() {
             </div>
 
             {/* Error Display */}
-            {error && (
+            {error instanceof Error && (
                 <Alert className="bg-red-50 border-red-200 mb-6" variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="flex items-center justify-between">
-                        <span>{error}</span>
-                        <Button 
-                            onClick={clearError} 
-                            variant="ghost" 
+                        <span>{error.message}</span>
+                        <Button
+                            onClick={() => refetch()}
+                            variant="ghost"
                             size="sm"
                             className="text-red-600 hover:text-red-800"
                         >
-                            Dismiss
+                            Retry
                         </Button>
                     </AlertDescription>
                 </Alert>
@@ -206,7 +184,7 @@ export default function AdminDashboard() {
                                 <Heart className="h-4 w-4 text-red-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{stats.totalVotes}</div>
+                                <div className="text-2xl font-bold">{votingStats.totalVotes}</div>
                                 <p className="text-xs text-muted-foreground">
                                     Across all photos
                                 </p>
@@ -219,7 +197,7 @@ export default function AdminDashboard() {
                                 <Users className="h-4 w-4 text-blue-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{stats.totalPhotos}</div>
+                                <div className="text-2xl font-bold">{votingStats.totalPhotos}</div>
                                 <p className="text-xs text-muted-foreground">
                                     In the contest
                                 </p>
@@ -232,7 +210,7 @@ export default function AdminDashboard() {
                                 <TrendingUp className="h-4 w-4 text-green-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{stats.averageVotes.toFixed(1)}</div>
+                                <div className="text-2xl font-bold">{votingStats.averageVotes.toFixed(1)}</div>
                                 <p className="text-xs text-muted-foreground">
                                     Per photo
                                 </p>
@@ -338,16 +316,15 @@ export default function AdminDashboard() {
                         <CardContent>
                             {topPhotos.length > 0 ? (
                                 <div className="space-y-4">
-                                    {topPhotos.map((photo, index) => (
-                                        <div 
-                                            key={photo.id} 
-                                            className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                                                selectedWinners.includes(photo.id) 
-                                                    ? 'border-yellow-300 bg-yellow-50' 
-                                                    : photo.isWinner 
-                                                        ? 'border-green-300 bg-green-50'
-                                                        : 'border-gray-200 hover:border-gray-300'
-                                            }`}
+                                    {topPhotos.map((photo: PhotoWithVotes, index: number) => (
+                                        <div
+                                            key={photo.id}
+                                            className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all cursor-pointer ${selectedWinners.includes(photo.id)
+                                                ? 'border-yellow-300 bg-yellow-50'
+                                                : photo.isWinner
+                                                    ? 'border-green-300 bg-green-50'
+                                                    : 'border-gray-200 hover:border-gray-300'
+                                                }`}
                                             onClick={() => !resultsPublished && handleWinnerSelection(photo.id)}
                                         >
                                             <div className="text-lg font-bold text-gray-400 w-8 text-center">
@@ -367,8 +344,8 @@ export default function AdminDashboard() {
                                                     {photo.voteCount}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
-                                                    {stats.totalVotes > 0 ? 
-                                                        `${((photo.voteCount / stats.totalVotes) * 100).toFixed(1)}%` 
+                                                    {votingStats.totalVotes > 0 ?
+                                                        `${((photo.voteCount / votingStats.totalVotes) * 100).toFixed(1)}%`
                                                         : '0%'
                                                     }
                                                 </div>
@@ -401,3 +378,5 @@ export default function AdminDashboard() {
         </div>
     );
 }
+
+export default withAuth(AdminDashboard, UserRole.ADMIN, '/voting');

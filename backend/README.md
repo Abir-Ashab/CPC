@@ -92,4 +92,10 @@ npm install
 npm run start:dev
 ```
 
+4. Run Google Form sync (optional):
+```bash
+cd backend
+npm run google-form-sync
+```
+
 The backend will be available at `http://localhost:4000`

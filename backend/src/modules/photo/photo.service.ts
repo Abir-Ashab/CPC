@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Photo, PhotoDocument } from './photo.schema';
-import { MinioService } from './minio.service';
-import { v4 as uuidv4 } from 'uuid';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { Photo, PhotoDocument } from "./photo.schema";
+import { MinioService } from "./minio.service";
+import { v4 as uuidv4 } from "uuid";
+import { extractCategoryFromCaption } from "../../utils/category-extractor.util";
 
 @Injectable()
 export class PhotoService {
@@ -22,16 +23,16 @@ export class PhotoService {
       slackId?: string;
       team?: string;
       caption?: string;
+      category?: string;
     },
   ): Promise<Photo> {
-    const fileExtension = file.originalname.split('.').pop();
+    const fileExtension = file.originalname.split(".").pop();
     const fileName = `${uuidv4()}.${fileExtension}`;
-    await this.minioService.uploadFile(
-      fileName,
-      file.buffer,
-      file.mimetype,
-    );
+    await this.minioService.uploadFile(fileName, file.buffer, file.mimetype);
     const url = await this.minioService.getFileUrl(fileName);
+
+    // Extract category from caption using the helper function
+    const category = participantInfo?.category || extractCategoryFromCaption(participantInfo?.caption || '');
 
     const photo = new this.photoModel({
       name: photoName || file.originalname,
@@ -43,6 +44,7 @@ export class PhotoService {
       participantSlackId: participantInfo?.slackId,
       participantTeam: participantInfo?.team,
       caption: participantInfo?.caption,
+      category: category,
       contentType: file.mimetype,
       size: file.size,
       uploadedAt: new Date(),
@@ -52,10 +54,7 @@ export class PhotoService {
   }
 
   async getAllPhotos(): Promise<any[]> {
-    const photos = await this.photoModel
-      .find()
-      .sort({ uploadedAt: -1 })
-      .exec();
+    const photos = await this.photoModel.find().sort({ uploadedAt: -1 }).exec();
 
     return await Promise.all(
       photos.map(async (photo) => {
@@ -70,13 +69,17 @@ export class PhotoService {
           winnerPosition: photo.winnerPosition,
           participantName: photo.participantName,
           participantEmail: photo.participantEmail,
+          category: photo.category,
+          caption: photo.caption,
         };
       }),
     );
   }
 
   async checkParticipantExists(email: string): Promise<boolean> {
-    const count = await this.photoModel.countDocuments({ participantEmail: email });
+    const count = await this.photoModel.countDocuments({
+      participantEmail: email,
+    });
     return count > 0;
   }
 
@@ -87,7 +90,7 @@ export class PhotoService {
   async deletePhoto(id: string): Promise<void> {
     const photo = await this.photoModel.findById(id);
     if (!photo) {
-      throw new Error('Photo not found');
+      throw new Error("Photo not found");
     }
     await this.minioService.deleteFile(photo.fileName);
     await this.photoModel.findByIdAndDelete(id);

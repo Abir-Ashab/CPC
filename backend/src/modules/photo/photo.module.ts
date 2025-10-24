@@ -7,9 +7,7 @@ import { Photo, PhotoSchema } from "./photo.schema";
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: Photo.name, schema: PhotoSchema },
-    ]),
+    MongooseModule.forFeature([{ name: Photo.name, schema: PhotoSchema }]),
   ],
   controllers: [PhotoController],
   providers: [PhotoService, MinioService],

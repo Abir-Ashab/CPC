@@ -16,6 +16,7 @@ interface PhotoCardProps {
     hasUserVoted: boolean;
     isUserVotedPhoto: boolean;
     isLoading?: boolean;
+    onClick?: () => void;
     votingActive?: boolean;
 }
 
@@ -26,6 +27,7 @@ export default function PhotoCard({
     hasUserVoted,
     isUserVotedPhoto,
     isLoading = false,
+    onClick
     votingActive = true
 }: PhotoCardProps) {
     const [isVoting, setIsVoting] = useState(false);
@@ -76,7 +78,10 @@ export default function PhotoCard({
             }`}>
             {getWinnerBadge()}
 
-            {/* Image Container */}
+            <div 
+                className="relative aspect-square overflow-hidden bg-gray-100 cursor-pointer"
+                onClick={onClick}
+            >
             <div className="relative aspect-square overflow-hidden bg-gray-100">
                 {!imageLoaded && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-200">

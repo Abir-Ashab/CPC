@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import PhotoCard from '@/components/modules/photo/PhotoCard';
+import PhotoSlider from '@/components/modules/photo/PhotoSlider';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useVotingState, useVote, usePhotos } from '@/hooks/useVoting';
@@ -29,6 +30,8 @@ function Voting() {
     const { isLoading, error, refetch } = usePhotos();
     const voteMutation = useVote();
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
+    const [sliderOpen, setSliderOpen] = useState(false);
+    const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
     const categories = ['All', 'Cefalo', 'Nature', 'Cityscape'];
     const categoryLabels: { [key: string]: string } = {
@@ -50,6 +53,15 @@ function Voting() {
         } catch (error) {
             return false;
         }
+    };
+
+    const handlePhotoClick = (photoIndex: number) => {
+        setSelectedPhotoIndex(photoIndex);
+        setSliderOpen(true);
+    };
+
+    const closeSlider = () => {
+        setSliderOpen(false);
     };
 
     return (
@@ -151,7 +163,7 @@ function Voting() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {filteredPhotos.map((photo: Photo) => (
+                            {filteredPhotos.map((photo: Photo, index: number) => (
                                 <PhotoCard
                                     key={photo.id}
                                     photo={photo}
@@ -160,6 +172,7 @@ function Voting() {
                                     hasUserVoted={hasVoted}
                                     isUserVotedPhoto={photo.id === votedPhotoId}
                                     isLoading={voteMutation.isPending || isLoading}
+                                    onClick={() => handlePhotoClick(index)}
                                 />
                             ))}
                         </div>
@@ -179,6 +192,13 @@ function Voting() {
                     </p>
                 </div>
             )}
+
+            <PhotoSlider
+                photos={filteredPhotos}
+                initialPhotoIndex={selectedPhotoIndex}
+                isOpen={sliderOpen}
+                onClose={closeSlider}
+            />
         </div>
     );
 }

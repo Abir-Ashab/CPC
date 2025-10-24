@@ -11,7 +11,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Camera, Trophy, Settings, LogOut, User, Loader2 } from 'lucide-react';

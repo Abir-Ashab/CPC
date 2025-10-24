@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ComponentType, createElement } from 'react';
 import { UserRole } from '@/types';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/hooks/useAuth';
 
 export function withAuth<P extends object>(
     WrappedComponent: ComponentType<P>,
-    role? : UserRole,
+    role?: UserRole,
     redirectTo = '/login'
 ) {
     function WithAuthComponent(props: P) {

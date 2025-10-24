@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/hooks/useAuth';
 
 export default function Login() {
     const router = useRouter();

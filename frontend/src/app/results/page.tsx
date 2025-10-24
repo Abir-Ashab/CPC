@@ -1,6 +1,6 @@
 'use client';
 
-import {  useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,9 +19,10 @@ import {
     RefreshCcw,
     Crown
 } from 'lucide-react';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/hooks/useAuth';
+import { withAuth } from '@/utils/withAuth';
 
-export default function Results() {
+function Results() {
     const {
         photos,
         settings: votingSettings,
@@ -311,3 +312,5 @@ export default function Results() {
         </div>
     );
 }
+
+export default withAuth(Results);

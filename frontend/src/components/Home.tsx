@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { withAuth } from '@/utils/withAuth';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/hooks/useAuth';
 
 export function HomeComponent() {
     const router = useRouter();

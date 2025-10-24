@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Heart, Trophy, User, Clock, Check } from 'lucide-react';
 import { Photo } from '@/services/votingApi';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/hooks/useAuth';
 
 interface PhotoCardProps {
     photo: Photo;

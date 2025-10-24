@@ -23,7 +23,6 @@ export const useSearchUsers = () => {
     };
 };
 
-// Hook for fetching admin users only
 export const useAdmins = () => {
     return useQuery<User[]>({
         queryKey: ['users', 'admins'],

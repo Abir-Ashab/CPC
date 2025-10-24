@@ -6,7 +6,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { User } from '@/types';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/hooks/useAuth';
 import { useUpdateUserRole } from '@/hooks/useUsers';
 
 interface AdminListProps {

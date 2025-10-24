@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import PhotoCard from '@/components/modules/photo/PhotoCard';
 import PhotoSlider from '@/components/modules/photo/PhotoSlider';
+import VotingCountdown from './components/VotingCountdown';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useVotingState, useVote, usePhotos } from '@/hooks/useVoting';
@@ -67,10 +68,12 @@ function Voting() {
     return (
         <div className="max-w-7xl mx-auto">
             <div className="mb-8">
-
-
+                <VotingCountdown 
+                    endTime={settings?.votingEndTime} 
+                    isActive={votingActive} 
+                />
                 <div className="mb-6">
-                        <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
                             {categories.map((category) => {
                                 const categoryName = category || 'Unknown';
                                 return (

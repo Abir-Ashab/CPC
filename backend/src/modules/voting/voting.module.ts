@@ -1,10 +1,10 @@
-import { Module, forwardRef } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { VotingController } from './voting.controller';
-import { VotingService } from './voting.service';
-import { Vote, VoteSchema } from './vote.schema';
-import { VotingSettings, VotingSettingsSchema } from './voting-settings.schema';
-import { PhotoModule } from '../photo/photo.module';
+import { Module, forwardRef } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
+import { VotingController } from "./voting.controller";
+import { VotingService } from "./voting.service";
+import { Vote, VoteSchema } from "./vote.schema";
+import { VotingSettings, VotingSettingsSchema } from "./voting-settings.schema";
+import { PhotoModule } from "../photo/photo.module";
 
 @Module({
   imports: [

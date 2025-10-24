@@ -20,11 +20,11 @@ export class AuthController {
   async googleAuth(@Req() req: Request, @Res() res: Response) {
     const redirectParam = req.query.redirect as string;
     if (redirectParam) {
-      res.cookie('oauth_redirect', redirectParam, {
+      res.cookie("oauth_redirect", redirectParam, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 10 * 60 * 1000, 
+        maxAge: 10 * 60 * 1000,
       });
     }
   }
@@ -46,7 +46,7 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 15 * 60 * 1000, 
+        maxAge: 15 * 60 * 1000,
       });
 
       res.cookie("refreshToken", tokens.refreshToken, {
@@ -61,11 +61,11 @@ export class AuthController {
 
       if (redirectParam && redirectParam.startsWith(process.env.FRONTEND_URL)) {
         redirectUrl = redirectParam;
-        res.clearCookie('oauth_redirect');
+        res.clearCookie("oauth_redirect");
       } else {
         redirectUrl =
           user.role === "ADMIN"
-            ? process.env.FRONTEND_URL + "/admin"
+            ? process.env.FRONTEND_URL + "/admin-panel"
             : process.env.FRONTEND_URL + "/voting";
       }
 
@@ -119,7 +119,7 @@ export class AuthController {
     return fullUser;
   }
 
-  @Get("logout")
+  @Post("logout")
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie("accessToken");
     res.clearCookie("refreshToken");

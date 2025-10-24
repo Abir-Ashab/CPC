@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
 
 export type VotingSettingsDocument = VotingSettings & Document;
 
@@ -24,4 +24,5 @@ export class VotingSettings {
   maxVotesPerUser: number = 1;
 }
 
-export const VotingSettingsSchema = SchemaFactory.createForClass(VotingSettings);
+export const VotingSettingsSchema =
+  SchemaFactory.createForClass(VotingSettings);

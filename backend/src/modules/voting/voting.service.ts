@@ -1,19 +1,28 @@
-import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { Vote, VoteDocument } from './vote.schema';
-import { Photo, PhotoDocument } from '../photo/photo.schema';
-import { VotingSettings, VotingSettingsDocument } from './voting-settings.schema';
-import { User } from '../users/schema/user.schema';
-import { Role } from '../users/dto/user.dto';
-import { MinioService } from '../photo/minio.service';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model, Types } from "mongoose";
+import { Vote, VoteDocument } from "./vote.schema";
+import { Photo, PhotoDocument } from "../photo/photo.schema";
+import {
+  VotingSettings,
+  VotingSettingsDocument,
+} from "./voting-settings.schema";
+import { User } from "../users/schema/user.schema";
+import { Role } from "../users/dto/user.dto";
+import { MinioService } from "../photo/minio.service";
 
 @Injectable()
 export class VotingService {
   constructor(
     @InjectModel(Vote.name) private voteModel: Model<VoteDocument>,
     @InjectModel(Photo.name) private photoModel: Model<PhotoDocument>,
-    @InjectModel(VotingSettings.name) private votingSettingsModel: Model<VotingSettingsDocument>,
+    @InjectModel(VotingSettings.name)
+    private votingSettingsModel: Model<VotingSettingsDocument>,
     private minioService: MinioService,
   ) {}
 
@@ -32,23 +41,23 @@ export class VotingService {
 
   async updateVotingSettings(
     user: User,
-    updates: Partial<VotingSettings>
+    updates: Partial<VotingSettings>,
   ): Promise<VotingSettingsDocument> {
-    if (user.role !== Role.ADMIN && user.email !== 'abir.ashab@cefalo.com') {
-      throw new ForbiddenException('Only admin can modify voting settings');
+    if (user.role !== Role.ADMIN && user.email !== "abir.ashab@cefalo.com") {
+      throw new ForbiddenException("Only admin can modify voting settings");
     }
 
     let settings = await this.getVotingSettings();
     return await this.votingSettingsModel.findByIdAndUpdate(
       settings._id,
       updates,
-      { new: true, upsert: true }
+      { new: true, upsert: true },
     );
   }
 
   async startVoting(user: User): Promise<VotingSettingsDocument> {
-    if (user.role !== Role.ADMIN && user.email !== 'abir.ashab@cefalo.com') {
-      throw new ForbiddenException('Only admin can start voting');
+    if (user.role !== Role.ADMIN && user.email !== "abir.ashab@cefalo.com") {
+      throw new ForbiddenException("Only admin can start voting");
     }
 
     return await this.updateVotingSettings(user, {
@@ -61,8 +70,8 @@ export class VotingService {
   }
 
   async stopVoting(user: User): Promise<VotingSettingsDocument> {
-    if (user.role !== Role.ADMIN && user.email !== 'abir.ashab@cefalo.com') {
-      throw new ForbiddenException('Only admin can stop voting');
+    if (user.role !== Role.ADMIN && user.email !== "abir.ashab@cefalo.com") {
+      throw new ForbiddenException("Only admin can stop voting");
     }
 
     return await this.updateVotingSettings(user, {
@@ -71,26 +80,29 @@ export class VotingService {
     });
   }
 
-  async vote(photoId: string, user: User): Promise<{ success: boolean; message: string }> {
+  async vote(
+    photoId: string,
+    user: User,
+  ): Promise<{ success: boolean; message: string }> {
     const settings = await this.getVotingSettings();
-    
+
     if (!settings.isVotingActive) {
-      throw new BadRequestException('Voting is not currently active');
+      throw new BadRequestException("Voting is not currently active");
     }
 
     // Check if photo exists
     const photo = await this.photoModel.findById(photoId);
     if (!photo) {
-      throw new NotFoundException('Photo not found');
+      throw new NotFoundException("Photo not found");
     }
 
     if (!user || !user._id) {
-      throw new BadRequestException('User authentication required');
+      throw new BadRequestException("User authentication required");
     }
 
     const existingVote = await this.voteModel.findOne({ userId: user._id });
     if (existingVote) {
-      throw new BadRequestException('You have already voted');
+      throw new BadRequestException("You have already voted");
     }
 
     await this.voteModel.create({
@@ -101,23 +113,24 @@ export class VotingService {
     });
 
     await this.photoModel.findByIdAndUpdate(photoId, {
-      $inc: { voteCount: 1 }
+      $inc: { voteCount: 1 },
     });
 
     return {
       success: true,
-      message: 'Vote recorded successfully'
+      message: "Vote recorded successfully",
     };
   }
 
   async getUserVote(userId: string): Promise<Vote | null> {
-    return await this.voteModel.findOne({ userId: new Types.ObjectId(userId) })
-      .populate('photoId');
+    return await this.voteModel
+      .findOne({ userId: new Types.ObjectId(userId) })
+      .populate("photoId");
   }
 
   async getVotingAnalytics(user: User): Promise<any> {
-    if (user.role !== Role.ADMIN && user.email !== 'abir.ashab@cefalo.com') {
-      throw new ForbiddenException('Only admin can view analytics');
+    if (user.role !== Role.ADMIN && user.email !== "abir.ashab@cefalo.com") {
+      throw new ForbiddenException("Only admin can view analytics");
     }
 
     const [totalVotes, photosWithVotes, settings] = await Promise.all([
@@ -136,7 +149,7 @@ export class VotingService {
         participantEmail: photo.participantEmail,
         isWinner: photo.isWinner,
         winnerPosition: photo.winnerPosition,
-      }))
+      })),
     );
 
     return {
@@ -147,24 +160,30 @@ export class VotingService {
     };
   }
 
-  async declareWinners(user: User, winnerIds: string[]): Promise<{ success: boolean; message: string }> {
-    if (user.role !== Role.ADMIN && user.email !== 'abir.ashab@cefalo.com') {
-      throw new ForbiddenException('Only admin can declare winners');
+  async declareWinners(
+    user: User,
+    winnerIds: string[],
+  ): Promise<{ success: boolean; message: string }> {
+    if (user.role !== Role.ADMIN && user.email !== "abir.ashab@cefalo.com") {
+      throw new ForbiddenException("Only admin can declare winners");
     }
 
     if (winnerIds.length !== 3) {
-      throw new BadRequestException('Must declare exactly 3 winners');
+      throw new BadRequestException("Must declare exactly 3 winners");
     }
 
-    await this.photoModel.updateMany({}, {
-      isWinner: false,
-      winnerPosition: undefined
-    });
+    await this.photoModel.updateMany(
+      {},
+      {
+        isWinner: false,
+        winnerPosition: undefined,
+      },
+    );
 
     for (let i = 0; i < winnerIds.length; i++) {
       await this.photoModel.findByIdAndUpdate(winnerIds[i], {
         isWinner: true,
-        winnerPosition: i + 1
+        winnerPosition: i + 1,
       });
     }
 
@@ -175,12 +194,13 @@ export class VotingService {
 
     return {
       success: true,
-      message: 'Winners declared successfully'
+      message: "Winners declared successfully",
     };
   }
 
   async getWinners(): Promise<any[]> {
-    const winners = await this.photoModel.find({ isWinner: true })
+    const winners = await this.photoModel
+      .find({ isWinner: true })
       .sort({ winnerPosition: 1 });
 
     return await Promise.all(
@@ -192,7 +212,7 @@ export class VotingService {
         participantName: photo.participantName,
         participantEmail: photo.participantEmail,
         winnerPosition: photo.winnerPosition,
-      }))
+      })),
     );
   }
 }

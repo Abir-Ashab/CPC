@@ -1,4 +1,3 @@
-// components/PhotoCard.tsx
 'use client';
 
 import { useState } from 'react';
@@ -6,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Heart, Trophy, User, Clock, Check } from 'lucide-react';
-import { Photo } from '@/stores/votingStore';
-import { useAuthStore } from '@/stores/authStore';
+import { Photo } from '@/services/votingApi';
+import { useUser } from '@/hooks/useAuth';
 
 interface PhotoCardProps {
     photo: Photo;
@@ -18,20 +17,19 @@ interface PhotoCardProps {
     isLoading?: boolean;
 }
 
-export default function PhotoCard({ 
-    photo, 
-    onVote, 
-    canVote, 
-    hasUserVoted, 
+export default function PhotoCard({
+    photo,
+    onVote,
+    canVote,
+    hasUserVoted,
     isUserVotedPhoto,
-    isLoading = false 
+    isLoading = false
 }: PhotoCardProps) {
     const [isVoting, setIsVoting] = useState(false);
-    const { isAdmin } = useAuthStore();
-
+    const { user } = useUser();
     const handleVote = async () => {
         if (!canVote || isVoting) return;
-        
+
         setIsVoting(true);
         try {
             await onVote(photo.id);
@@ -42,11 +40,11 @@ export default function PhotoCard({
 
     const getWinnerBadge = () => {
         if (!photo.isWinner) return null;
-        
+
         const positions = ['1st', '2nd', '3rd'];
         const colors = ['bg-yellow-500', 'bg-gray-400', 'bg-orange-600'];
         const position = photo.winnerPosition ? photo.winnerPosition - 1 : 0;
-        
+
         return (
             <Badge className={`${colors[position]} text-white absolute top-2 left-2 z-10`}>
                 <Trophy className="h-3 w-3 mr-1" />
@@ -56,11 +54,10 @@ export default function PhotoCard({
     };
 
     return (
-        <Card className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg ${
-            isUserVotedPhoto ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-        }`}>
+        <Card className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg ${isUserVotedPhoto ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+            }`}>
             {getWinnerBadge()}
-            
+
             <div className="relative aspect-square overflow-hidden bg-gray-100">
                 <img
                     src={photo.url}
@@ -68,7 +65,7 @@ export default function PhotoCard({
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
                 />
-                
+
                 {isUserVotedPhoto && (
                     <div className="absolute inset-0 bg-blue-600 bg-opacity-20 flex items-center justify-center">
                         <div className="bg-white rounded-full p-2">
@@ -84,7 +81,7 @@ export default function PhotoCard({
                 </h3>
 
                 {/* Participant Info - Only show for admins */}
-                {photo.participantName && isAdmin() && (
+                {photo.participantName && user?.role === 'ADMIN' && (
                     <div className="flex items-center text-sm text-gray-600 mb-2">
                         <User className="h-4 w-4 mr-1" />
                         <span>{photo.participantName}</span>
@@ -103,8 +100,8 @@ export default function PhotoCard({
                             {photo.voteCount} {photo.voteCount === 1 ? 'vote' : 'votes'}
                         </span>
                     </div>
-                
-                    {isAdmin() && (
+
+                    {user?.role === 'ADMIN' && (
                         <Badge variant="secondary">
                             Votes: {photo.voteCount}
                         </Badge>

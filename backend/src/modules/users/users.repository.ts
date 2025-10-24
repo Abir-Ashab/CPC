@@ -13,8 +13,21 @@ export class UsersRepository {
     return createdUser.save();
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userModel.find().exec();
+  async findAll(query?: string, role?: string): Promise<User[]> {
+    const filter: any = {};
+
+    if (query) {
+      filter.$or = [
+        { name: { $regex: query, $options: "i" } },
+        { email: { $regex: query, $options: "i" } },
+      ];
+    }
+
+    if (role) {
+      filter.role = role;
+    }
+
+    return this.userModel.find(filter).exec();
   }
 
   async findByEmail(email: string): Promise<User | null> {

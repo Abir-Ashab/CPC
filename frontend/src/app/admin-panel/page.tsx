@@ -89,21 +89,24 @@ function AdminDashboard() {
         }
     }, [analytics?.votingSettings?.votingEndTime]);
 
-
+    
     const handleStartVoting = async (settings?: { startTime?: Date; durationHours?: number }) => {
         setActionLoading('start');
         try {
-            const durationHours = settings?.durationHours || 24; // Default to 24 hours
+            const durationHours = settings?.durationHours || 24; 
             const startTime = settings?.startTime || new Date();
             const endTime = new Date(startTime.getTime() + durationHours * 60 * 60 * 1000);
 
+            const now = new Date();
+            const isFuture = startTime.getTime() > now.getTime();
+
             await updateVotingSettingsMutation({
-                isVotingActive: true,
+                isVotingActive: !isFuture,
                 votingStartTime: startTime,
                 votingEndTime: endTime,
             });
 
-            const message = settings?.startTime
+            const message = isFuture
                 ? `Voting scheduled successfully!`
                 : `Voting started successfully!`;
             toast.success(message);

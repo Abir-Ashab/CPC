@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from "@nestjs/common";
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import { Photo, PhotoDocument } from "../photo/photo.schema";
@@ -29,6 +30,21 @@ export class VotingService {
     private photoService: PhotoService,
   ) { }
 
+  // Cron job: check every minute for scheduled voting to activate
+  @Cron(CronExpression.EVERY_MINUTE)
+  async activateScheduledVoting() {
+    const settings = await this.votingSettingsModel.findOne();
+    if (
+      settings &&
+      !settings.isVotingActive &&
+      settings.votingStartTime &&
+      new Date(settings.votingStartTime).getTime() <= Date.now()
+    ) {
+      await this.votingSettingsModel.findByIdAndUpdate(settings._id, {
+        isVotingActive: true,
+      });
+    }
+  }
   async getVotingSettings(): Promise<VotingSettingsDocument> {
     let settings = await this.votingSettingsModel.findOne();
     if (!settings) {

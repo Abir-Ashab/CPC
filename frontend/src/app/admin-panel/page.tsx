@@ -88,17 +88,6 @@ function AdminDashboard() {
         }
     }, [analytics?.votingSettings?.votingEndTime]);
 
-    const handleRefresh = async () => {
-        setIsRefreshing(true);
-        try {
-            await refetch();
-            toast.success('Data refreshed successfully');
-        } catch (err) {
-            toast.error('Failed to refresh data');
-        } finally {
-            setIsRefreshing(false);
-        }
-    };
 
     const handleStartVoting = async (settings?: { startTime?: Date; durationHours?: number }) => {
         setActionLoading('start');
@@ -114,8 +103,8 @@ function AdminDashboard() {
             });
 
             const message = settings?.startTime
-                ? `Voting scheduled successfully! Ends in ${durationHours} hours`
-                : `Voting started successfully! Ends in ${durationHours} hours`;
+                ? `Voting scheduled successfully!`
+                : `Voting started successfully!`;
             toast.success(message);
 
             await refetch();

@@ -20,21 +20,46 @@ interface VotingSettingsDialogProps {
 export function VotingSettingsDialog({ open, onOpenChange, onStartVoting, loading }: VotingSettingsDialogProps) {
     const [startImmediately, setStartImmediately] = useState(true);
     const [startTime, setStartTime] = useState<Date>();
-    const [durationHours, setDurationHours] = useState(24);
+    const [durationHours, setDurationHours] = useState<number | ''>('');
+    const [durationMinutes, setDurationMinutes] = useState<number | ''>('');
+
+    const getTotalDurationInHours = () => {
+        const hours = typeof durationHours === 'number' ? durationHours : 0;
+        const minutes = typeof durationMinutes === 'number' ? durationMinutes : 0;
+        
+        if (hours === 0 && minutes === 0) return undefined;
+        return hours + (minutes / 60);
+    };
 
     const handleStart = () => {
+        const duration = getTotalDurationInHours();
         if (startImmediately) {
-            onStartVoting({ durationHours });
+            onStartVoting({ durationHours: duration });
         } else if (startTime) {
-            onStartVoting({ startTime, durationHours });
+            onStartVoting({ startTime, durationHours: duration });
         } else {
-            // Start immediately as fallback
-            onStartVoting({ durationHours });
+            onStartVoting({ durationHours: duration });
         }
     };
 
     const handleImmediateStart = () => {
-        onStartVoting({ durationHours }); 
+        const duration = getTotalDurationInHours();
+        onStartVoting({ durationHours: duration }); 
+    };
+
+    const formatTotalDuration = () => {
+        const hours = typeof durationHours === 'number' ? durationHours : 0;
+        const minutes = typeof durationMinutes === 'number' ? durationMinutes : 0;
+        
+        if (hours === 0 && minutes === 0) {
+            return 'Enter voting duration';
+        }
+        
+        const parts = [];
+        if (hours > 0) parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
+        if (minutes > 0) parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
+        
+        return `Voting will automatically end after ${parts.join(' and ')}`;
     };
 
     return (
@@ -111,17 +136,55 @@ export function VotingSettingsDialog({ open, onOpenChange, onStartVoting, loadin
                     )}
 
                     <div className="space-y-2">
-                        <Label htmlFor="duration">Voting Duration (hours)</Label>
-                        <Input
-                            id="duration"
-                            type="number"
-                            min="1"
-                            max="720"
-                            value={durationHours}
-                            onChange={(e) => setDurationHours(parseInt(e.target.value) || 24)}
-                        />
+                        <Label>Voting Duration</Label>
+                        <div className="flex gap-2">
+                            <div className="flex-1">
+                                <Label htmlFor="duration-hours" className="text-xs text-muted-foreground">Hours</Label>
+                                <Input
+                                    id="duration-hours"
+                                    type="number"
+                                    min="0"
+                                    max="720"
+                                    placeholder="0"
+                                    value={durationHours}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '') {
+                                            setDurationHours('');
+                                        } else {
+                                            const parsed = parseInt(value);
+                                            if (!isNaN(parsed) && parsed >= 0) {
+                                                setDurationHours(parsed);
+                                            }
+                                        }
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <Label htmlFor="duration-minutes" className="text-xs text-muted-foreground">Minutes</Label>
+                                <Input
+                                    id="duration-minutes"
+                                    type="number"
+                                    min="0"
+                                    max="59"
+                                    placeholder="0"
+                                    value={durationMinutes}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '') {
+                                            setDurationMinutes('');
+                                        } else {
+                                            const parsed = parseInt(value);
+                                            if (!isNaN(parsed) && parsed >= 0 && parsed <= 59) {
+                                                setDurationMinutes(parsed);
+                                            }
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </div>
                         <p className="text-sm text-muted-foreground">
-                            Voting will automatically end after {durationHours} hours
+                            {formatTotalDuration()}
                         </p>
                     </div>
                 </div>
@@ -137,14 +200,14 @@ export function VotingSettingsDialog({ open, onOpenChange, onStartVoting, loadin
                     {startImmediately ? (
                         <Button
                             onClick={handleImmediateStart}
-                            disabled={loading}
+                            disabled={loading || getTotalDurationInHours() === undefined}
                         >
                             {loading ? 'Starting...' : 'Start Immediately'}
                         </Button>
                     ) : (
                         <Button
                             onClick={handleStart}
-                            disabled={!startTime || loading}
+                            disabled={!startTime || loading || getTotalDurationInHours() === undefined}
                         >
                             {loading ? 'Scheduling...' : 'Schedule Voting'}
                         </Button>

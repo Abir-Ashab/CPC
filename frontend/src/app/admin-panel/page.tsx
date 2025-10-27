@@ -60,6 +60,7 @@ function AdminDashboard() {
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [showSettingsDialog, setShowSettingsDialog] = useState(false);
     const [showResetDialog, setShowResetDialog] = useState(false);
+    const [customExtendHours, setCustomExtendHours] = useState('');
 
     const [timeLeft, setTimeLeft] = useState<string>('');
 
@@ -88,34 +89,26 @@ function AdminDashboard() {
         }
     }, [analytics?.votingSettings?.votingEndTime]);
 
-    const handleRefresh = async () => {
-        setIsRefreshing(true);
-        try {
-            await refetch();
-            toast.success('Data refreshed successfully');
-        } catch (err) {
-            toast.error('Failed to refresh data');
-        } finally {
-            setIsRefreshing(false);
-        }
-    };
-
+    
     const handleStartVoting = async (settings?: { startTime?: Date; durationHours?: number }) => {
         setActionLoading('start');
         try {
-            const durationHours = settings?.durationHours || 24; // Default to 24 hours
+            const durationHours = settings?.durationHours || 24; 
             const startTime = settings?.startTime || new Date();
             const endTime = new Date(startTime.getTime() + durationHours * 60 * 60 * 1000);
 
+            const now = new Date();
+            const isFuture = startTime.getTime() > now.getTime();
+
             await updateVotingSettingsMutation({
-                isVotingActive: true,
+                isVotingActive: !isFuture,
                 votingStartTime: startTime,
                 votingEndTime: endTime,
             });
 
-            const message = settings?.startTime
-                ? `Voting scheduled successfully! Ends in ${durationHours} hours`
-                : `Voting started successfully! Ends in ${durationHours} hours`;
+            const message = isFuture
+                ? `Voting scheduled successfully!`
+                : `Voting started successfully!`;
             toast.success(message);
 
             await refetch();
@@ -384,6 +377,35 @@ function AdminDashboard() {
                                             <Calendar className="h-4 w-4 mr-2" />
                                             Extend 24 Hours
                                         </Button>
+                                        {/* Custom extend input */}
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="720"
+                                                className="border rounded px-2 py-1 w-20"
+                                                placeholder="Hours"
+                                                value={customExtendHours}
+                                                onChange={e => setCustomExtendHours(e.target.value.replace(/^0+/, ''))}
+                                            />
+                                            <Button
+                                                variant="outline"
+                                                className="flex items-center"
+                                                onClick={() => {
+                                                    const hours = parseInt(customExtendHours);
+                                                    if (!isNaN(hours) && hours > 0 && hours <= 720) {
+                                                        handleExtendVoting(hours);
+                                                        setCustomExtendHours('');
+                                                    } else {
+                                                        toast.error('Enter a valid number of hours (1-720)');
+                                                    }
+                                                }}
+                                                disabled={!customExtendHours || isNaN(parseInt(customExtendHours)) || parseInt(customExtendHours) < 1 || parseInt(customExtendHours) > 720}
+                                            >
+                                                <Clock className="h-4 w-4 mr-2" />
+                                                Extend
+                                            </Button>
+                                        </div>
                                     </>
                                 )}
 

@@ -13,6 +13,11 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: 'Photography Contest',
   description: 'Photography voting system with admin controls',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
@@ -31,11 +36,11 @@ export default function RootLayout({
             </main>
           </div>
           <Toaster
-            position="top-right"
+            position="bottom-right"
             expand={false}
             richColors
-            closeButton
-            duration={4000}
+            theme='system'
+            duration={2000}
           />
         </Providers>
       </body>

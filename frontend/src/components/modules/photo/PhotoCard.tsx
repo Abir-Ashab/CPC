@@ -41,7 +41,7 @@ export default function PhotoCard({
         try {
             const success = await onVote(photo.id);
             if (success) {
-                // Success toast is handled in the parent component
+                toast.success('Vote cast successfully!');
             }
         } finally {
             setIsVoting(false);
@@ -97,7 +97,6 @@ export default function PhotoCard({
                     onError={handleImageError}
                 />
 
-                {/* Overlay on hover */}
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <Eye className="h-8 w-8 text-white" />
                 </div>
@@ -113,19 +112,11 @@ export default function PhotoCard({
             </div>
 
             <CardContent className="p-4">
-                {/* Photo Title */}
+
                 <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-gray-900">
                     {photo.name}
                 </h3>
 
-                {/* Caption */}
-                {photo.caption && (
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {photo.caption}
-                    </p>
-                )}
-
-                {/* Participant Info (Admin only) */}
                 {photo.participantName && user?.role === 'ADMIN' && (
                     <div className="flex items-center text-sm text-gray-600 mb-2">
                         <User className="h-4 w-4 mr-1" />
@@ -136,7 +127,6 @@ export default function PhotoCard({
                     </div>
                 )}
 
-                {/* Meta Information */}
                 <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
                     <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-1" />
@@ -149,25 +139,19 @@ export default function PhotoCard({
                     )}
                 </div>
 
-                {/* Vote Count and Status */}
+
                 <div className="flex items-center justify-between">
                     <div className="flex items-center text-sm">
-                        <Heart className={`h-4 w-4 mr-1 ${photo.voteCount > 0 ? 'text-red-500 fill-red-500' : 'text-gray-400'
-                            }`} />
+                        {user?.role === 'ADMIN' && (
                         <span className="font-medium text-gray-900">
+                            <Heart className={`h-4 w-4 mr-1 ${photo.voteCount > 0 ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
                             {photo.voteCount} {photo.voteCount === 1 ? 'vote' : 'votes'}
                         </span>
+                        )}
                     </div>
-
-                    {user?.role === 'ADMIN' && (
-                        <Badge variant="outline" className="text-xs">
-                            ID: {photo.id.slice(-6)}
-                        </Badge>
-                    )}
                 </div>
             </CardContent>
 
-            {/* Vote Button */}
             <CardFooter className="p-4 pt-0">
                 {canVote && !hasUserVoted && votingActive ? (
                     <Button

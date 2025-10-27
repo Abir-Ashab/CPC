@@ -114,7 +114,7 @@ export function VotingSettingsDialog({ open, onOpenChange, onStartVoting, loadin
                                         selected={startTime}
                                         onSelect={setStartTime}
                                         initialFocus
-                                        disabled={(date) => date < new Date()}
+                                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                                     />
                                     <div className="p-3 border-t">
                                         <Input

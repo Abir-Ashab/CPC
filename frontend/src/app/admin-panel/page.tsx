@@ -60,6 +60,7 @@ function AdminDashboard() {
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [showSettingsDialog, setShowSettingsDialog] = useState(false);
     const [showResetDialog, setShowResetDialog] = useState(false);
+    const [customExtendHours, setCustomExtendHours] = useState('');
 
     const [timeLeft, setTimeLeft] = useState<string>('');
 
@@ -373,6 +374,35 @@ function AdminDashboard() {
                                             <Calendar className="h-4 w-4 mr-2" />
                                             Extend 24 Hours
                                         </Button>
+                                        {/* Custom extend input */}
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="720"
+                                                className="border rounded px-2 py-1 w-20"
+                                                placeholder="Hours"
+                                                value={customExtendHours}
+                                                onChange={e => setCustomExtendHours(e.target.value.replace(/^0+/, ''))}
+                                            />
+                                            <Button
+                                                variant="outline"
+                                                className="flex items-center"
+                                                onClick={() => {
+                                                    const hours = parseInt(customExtendHours);
+                                                    if (!isNaN(hours) && hours > 0 && hours <= 720) {
+                                                        handleExtendVoting(hours);
+                                                        setCustomExtendHours('');
+                                                    } else {
+                                                        toast.error('Enter a valid number of hours (1-720)');
+                                                    }
+                                                }}
+                                                disabled={!customExtendHours || isNaN(parseInt(customExtendHours)) || parseInt(customExtendHours) < 1 || parseInt(customExtendHours) > 720}
+                                            >
+                                                <Clock className="h-4 w-4 mr-2" />
+                                                Extend
+                                            </Button>
+                                        </div>
                                     </>
                                 )}
 

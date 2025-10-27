@@ -11,7 +11,6 @@ import { Photo } from '@/services/votingApi';
 import {
     Trophy,
     AlertCircle,
-    CheckCircle,
     Filter
 } from 'lucide-react';
 import { withAuth } from '@/utils/withAuth';
@@ -70,8 +69,8 @@ function Voting() {
                     endTime={settings?.votingEndTime} 
                     isActive={votingActive} 
                 />
-                <div className="mb-6">
-                    <div className="flex flex-wrap gap-2">
+                <div className="mb-6 mt-8">
+                    <div className="flex flex-wrap gap-3 flex items-center justify-center">
                             {categories.map((category) => {
                                 const categoryName = category || 'Unknown';
                                 return (
@@ -80,7 +79,7 @@ function Voting() {
                                         onClick={() => setSelectedCategory(categoryName)}
                                         variant={selectedCategory === categoryName ? "default" : "outline"}
                                         size="sm"
-                                        className="text-sm"
+                                        className="text-lg"
                                     >
                                         {categoryLabels[categoryName] || categoryName}
                                     </Button>

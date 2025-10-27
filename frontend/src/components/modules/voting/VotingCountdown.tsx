@@ -55,10 +55,10 @@ export default function VotingCountdown({ endTime, isActive }: VotingCountdownPr
 
     const TimeCard = ({ value, label }: { value: number; label: string }) => (
         <div className="bg-zinc-50 rounded-xl px-6 py-4 min-w-[80px] shadow-lg">
-            <div className="text-4xl font-bold text-cyan-400 tabular-nums text-center mb-1">
+            <div className="text-4xl font-bold text-gray-600 tabular-nums text-center mb-1">
                 {formatNumber(value)}
             </div>
-            <div className="text-xs uppercase tracking-wider text-slate-400 text-center font-semibold">
+            <div className="text-xs uppercase tracking-wider text-slate-600 text-center font-semibold">
                 {label}
             </div>
         </div>

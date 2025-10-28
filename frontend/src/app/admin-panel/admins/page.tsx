@@ -14,7 +14,7 @@ function AdminManagementPage() {
     const { data: admins = [], isLoading } = useAdmins();
 
     return (
-        <div className="container mx-auto p-6 max-w-5xl">
+        <div className="max-w-7xl mx-auto">
             <Toaster position="top-right" expand richColors />
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Admin Management</h1>

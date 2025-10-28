@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Heart, Trophy, User, Clock, Check, Eye } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Heart, Trophy, User, Clock, Check, Eye, Award } from 'lucide-react';
 import { Photo } from '@/services/votingApi';
 import { useUser } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -57,138 +57,134 @@ export default function PhotoCard({
     const getWinnerBadge = () => {
         if (!photo.isWinner) return null;
 
-        const positions = ['1st', '2nd', '3rd'];
-        const colors = ['bg-yellow-500', 'bg-gray-400', 'bg-orange-600'];
+        const positions = [
+            { label: '1st Place', color: 'bg-gradient-to-r from-yellow-400 to-yellow-600', icon: '🥇' },
+            { label: '2nd Place', color: 'bg-gradient-to-r from-gray-300 to-gray-500', icon: '🥈' },
+            { label: '3rd Place', color: 'bg-gradient-to-r from-orange-400 to-orange-600', icon: '🥉' }
+        ];
         const position = photo.winnerPosition ? photo.winnerPosition - 1 : 0;
+        const winner = positions[position];
 
         return (
-            <Badge className={`${colors[position]} text-white absolute top-2 left-2 z-10`}>
-                <Trophy className="h-3 w-3 mr-1" />
-                {positions[position]} Place
-            </Badge>
+            <div className={`${winner.color} text-white absolute top-1 left-3 z-10 px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5 text-sm font-semibold`}>
+                <Trophy className="h-4 w-4" />
+                {winner.label}
+            </div>
         );
     };
 
     return (
-        <Card className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg border-2 ${isUserVotedPhoto
-            ? 'border-blue-500 bg-blue-50 shadow-md'
-            : photo.isWinner
-                ? 'border-yellow-300 bg-yellow-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}>
+        <Card className={`group flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-xl`}>
             {getWinnerBadge()}
 
-            <div 
-                className="relative aspect-square overflow-hidden bg-gray-100 cursor-pointer"
-                onClick={onClick}
-            >
-                {!imageLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
-                    </div>
-                )}
-                <img
-                    src={photo.url}
-                    alt={photo.name}
-                    className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'
-                        }`}
-                    loading="lazy"
-                    onLoad={() => setImageLoaded(true)}
-                    onError={handleImageError}
-                />
-
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <Eye className="h-8 w-8 text-white" />
-                </div>
-
-                {isUserVotedPhoto && (
-                    <div className="absolute top-2 right-2 z-10">
-                        <Badge className="bg-blue-600 text-white">
-                            <Check className="h-3 w-3 mr-1" />
-                            Your Vote
-                        </Badge>
-                    </div>
-                )}
-            </div>
-
-            <CardContent className="p-4">
-
-                <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-gray-900">
-                    {photo.name}
-                </h3>
-
-                {photo.participantName && user?.role === 'ADMIN' && (
-                    <div className="flex items-center text-sm text-gray-600 mb-2">
-                        <User className="h-4 w-4 mr-1" />
-                        <span className="font-medium">{photo.participantName}</span>
-                        {photo.participantEmail && (
-                            <span className="text-gray-500 ml-2">({photo.participantEmail})</span>
-                        )}
-                    </div>
-                )}
-
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                    <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        <span>{new Date(photo.uploadedAt).toLocaleDateString()}</span>
-                    </div>
-                    {photo.category && (
-                        <Badge variant="secondary" className="text-xs">
-                            {photo.category}
-                        </Badge>
+            <CardHeader className="p-0">
+                <div 
+                    className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 cursor-pointer"
+                    onClick={onClick}
+                >
+                    {!imageLoaded && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-1">
+                                <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-300 border-t-gray-700"></div>
+                                <span className="text-sm text-gray-500 font-medium">Loading...</span>
+                            </div>
+                        </div>
                     )}
+                    <img
+                        src={photo.url}
+                        alt={photo.name}
+                        className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 ${
+                            imageLoaded ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        loading="lazy"
+                        onLoad={() => setImageLoaded(true)}
+                        onError={handleImageError}
+                    />
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <Eye className="h-8 w-8 text-white" />
+                    </div>
                 </div>
+            </CardHeader>
 
+            <CardContent className="p-5">
+                <div className="space-y-3">
+                    <div className="flex flex-col justify-start">
+                        <h3 className="font-bold text-lg line-clamp-2 text-gray-900 leading-tight mb-2">
+                            {photo.name}
+                        </h3>
+                        
+                    </div>
 
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center text-sm">
+                    <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                    {photo.participantName && user?.role === 'ADMIN' && (
+                        <div className="flex items-center gap-2 text-sm pt-1">
+                            <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 truncate">{photo.participantName}</p>
+                                {photo.participantEmail && (
+                                    <p className="text-xs text-gray-500 truncate">{photo.participantEmail}</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-sm pt-1">                       
                         {user?.role === 'ADMIN' && (
-                        <span className="font-medium text-gray-900">
-                            <Heart className={`h-4 w-4 mr-1 ${photo.voteCount > 0 ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
-                            {photo.voteCount} {photo.voteCount === 1 ? 'vote' : 'votes'}
-                        </span>
+                            <div className="flex items-center gap-2">
+                                <Heart className={`h-4 w-4 ${photo.voteCount > 0 ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
+                                <span className="font-bold text-gray-900">{photo.voteCount}</span>
+                                <span className="text-gray-500 text-xs">{photo.voteCount === 1 ? 'vote' : 'votes'}</span>
+                            </div>
+                        )}
+                        {photo.category && (
+                            <Badge variant="secondary" className="text-xs font-medium w-fit">
+                                {photo.category}
+                            </Badge>
                         )}
                     </div>
                 </div>
             </CardContent>
 
-            <CardFooter className="p-4 pt-0">
+            <CardFooter className="p-5 pt-0">
                 {canVote && !hasUserVoted && votingActive ? (
                     <Button
                         onClick={handleVote}
                         disabled={isVoting || isLoading}
-                        className="w-full bg-black text-white"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all duration-300"
                         size="lg"
                     >
                         {isVoting ? (
                             <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                Voting...
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                                Submitting Vote...
                             </>
                         ) : (
                             <>
-                                <Heart className="h-4 w-4 mr-2" />
-                                Vote Now
+                                <Heart className="h-5 w-5 mr-2" />
+                                Cast Your Vote
                             </>
                         )}
                     </Button>
                 ) : hasUserVoted ? (
-                    <div className="w-full text-center">
+                    <div className="w-full">
                         {isUserVotedPhoto ? (
-                            <Badge className="bg-green-600 text-white px-4 py-2 text-sm">
-                                <Check className="h-4 w-4 mr-1" />
-                                You Voted for This
-                            </Badge>
+                            <div className="bg-green-50 border-2 border-green-500 rounded-lg p-1 flex items-center justify-center gap-2">
+                                <span className="text-green-700">You Voted for This Photo</span>
+                            </div>
                         ) : (
-                            <Badge variant="secondary" className="px-4 py-2 text-sm">
-                                Vote Submitted
-                            </Badge>
+                            <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-1 flex items-center justify-center gap-2">
+                                <span className="font-medium text-gray-600">Vote Already Submitted</span>
+                            </div>
                         )}
                     </div>
                 ) : (
-                    <Badge variant="outline" className="w-full justify-center py-2 text-sm">
-                        {votingActive ? 'Vote Now' : 'Voting Closed'}
-                    </Badge>
+                    <div className="w-full bg-gray-100 border-2 border-gray-300 rounded-lg p-1 flex items-center justify-center">
+                        <span className="font-medium text-gray-500">
+                            {votingActive ? 'Vote Now' : 'Voting Period Ended'}
+                        </span>
+                    </div>
                 )}
             </CardFooter>
         </Card>

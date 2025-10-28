@@ -64,6 +64,7 @@ export const useVotingState = () => {
     const photos = photosQuery.data ?? [];
     const canVote = settingsQuery.data?.isVotingActive && !userVoteQuery.data?.votedPhotoId;
     const hasVoted = !!userVoteQuery.data?.votedPhotoId;
+    console.log("data is: \n", userVoteQuery.data);
     const votedPhotoId = userVoteQuery.data?.votedPhotoId;
     const votingActive = settingsQuery.data?.isVotingActive ?? false;
     const totalVotes = photos.reduce((sum: number, photo) => sum + (photo.voteCount || 0), 0);

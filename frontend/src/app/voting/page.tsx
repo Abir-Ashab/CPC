@@ -66,6 +66,13 @@ function Voting() {
     return (
         <div className="max-w-7xl mx-auto">
             <div className="mb-8">
+                {!votingActive && (
+                        <Alert className="bg-yellow-50 border-yellow-200 w-full text-center">
+                            <AlertDescription>
+                                <h1 className="text-lg text-gray-700">Voting is not currently active!</h1>
+                            </AlertDescription>
+                        </Alert>
+                )}
                 <VotingCountdown 
                     endTime={settings?.votingEndTime} 
                     isActive={votingActive} 

@@ -8,35 +8,14 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUser } from '@/hooks/useAuth';
 
 export default function Login() {
-    const router = useRouter();
     const searchParams = useSearchParams();
 
-    const { user, isLoading } = useUser();
     const login = useAuthStore((state) => state.login);
-
-    // Handle redirect after successful authentication
-    useEffect(() => {
-        if (user) {
-            const redirectUrl = searchParams.get('redirect');
-            router.replace(redirectUrl || (user.role === 'ADMIN' ? '/admin-panel' : '/voting'));
-        }
-    }, [user, router, searchParams]);
 
     const handleGoogleLogin = () => {
         const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
         login(currentUrl);
     };
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-                <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4 text-center">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-                    <p className="text-gray-600 mt-4">Checking authentication...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -63,7 +42,6 @@ export default function Login() {
     );
 }
 
-// Google Icon
 const GoogleIcon = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />

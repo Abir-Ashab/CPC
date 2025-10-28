@@ -1,5 +1,4 @@
 services:
-  # MongoDB Service
   mongo:
     image: mongo:7
     container_name: mongo
@@ -15,7 +14,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # MinIO Service
   minio:
     image: minio/minio:latest
     container_name: minio
@@ -36,51 +34,30 @@ services:
       timeout: 20s
       retries: 3
 
-  # NestJS Backend Service
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: photo-backend
-    ports:
-      - "5000:5000"
+    container_name: backend
     env_file:
       - ./backend/.env
-    environment:
-      - PORT=5000
-      - MONGODB_URI=mongodb://mongo:27017/photo-upload-db
-      - MINIO_ENDPOINT=minio
-      - MINIO_PORT=9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
-      - MINIO_BUCKET_NAME=photos
-      - MINIO_USE_SSL=false
-      - GOOGLE_SPREADSHEET_ID=${GOOGLE_SPREADSHEET_ID}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - FRONTEND_URL=${FRONTEND_URL}
+    ports:
+      - "5000:5000"
     depends_on:
-      mongo:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
+      - mongo
+      - minio
     networks:
       - photo-app-network
 
-  # Next.js Frontend Service
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: photo-frontend
+    container_name: frontend
+    env_file:
+      - ./frontend/.env
     ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:5000/api
-      - BACKEND_URL=http://localhost:5000
+      - "8080:8080"
     depends_on:
       - backend
     networks:

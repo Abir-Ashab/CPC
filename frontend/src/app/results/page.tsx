@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/hooks/useAuth';
 import { withAuth } from '@/utils/withAuth';
+import { toast } from 'sonner';
+import PhotoSlider from '@/components/modules/photo/PhotoSlider';
 
 function Results() {
     const {
@@ -36,6 +38,9 @@ function Results() {
     const { user } = useUser();
     const isAdminUser = user?.role === 'ADMIN';
 
+    const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
+    const [isSliderOpen, setIsSliderOpen] = useState(false);
+
     const handleRefresh = async () => {
         setIsRefreshing(true);
         try {
@@ -50,6 +55,14 @@ function Results() {
     const calcTotalVotes = photos.reduce((sum: number, photo: Photo) => sum + photo.voteCount, 0);
     const canViewResults = user?.role === 'ADMIN' || hasResults;
 
+    const openSlider = (photo: Photo) => {
+        const index = sortedPhotos.findIndex(p => p.id === photo.id);
+        if (index !== -1) {
+            setSelectedPhotoIndex(index);
+            setIsSliderOpen(true);
+        }
+    };
+
     const getPositionIcon = (position: number) => {
         switch (position) {
             case 1: return <Crown className="h-6 w-6 text-yellow-500" />;
@@ -61,23 +74,28 @@ function Results() {
 
     const getPositionBadge = (position: number) => {
         const configs = [
-            { bg: 'bg-yellow-500', text: 'text-white', label: '1st Place' },
-            { bg: 'bg-gray-400', text: 'text-white', label: '2nd Place' },
-            { bg: 'bg-orange-600', text: 'text-white', label: '3rd Place' }
+            { bg: 'bg-gradient-to-r from-yellow-400 to-yellow-600', text: 'text-black', label: '1st Place' },
+            { bg: 'bg-gradient-to-r from-gray-300 to-gray-500', text: 'text-black', label: '2nd Place' },
+            { bg: 'bg-gradient-to-r from-orange-400 to-orange-600', text: 'text-black', label: '3rd Place' }
         ];
 
         const config = configs[position - 1];
         if (!config) return null;
 
         return (
-            <Badge className={`${config.bg} ${config.text} px-3 py-1`}>
+            <Badge className={`${config.bg} ${config.text}  px-3 py-1`}>
                 {getPositionIcon(position)}
                 <span className="ml-2">{config.label}</span>
             </Badge>
         );
     };
 
-    // Show blank page for normal users when results are not published
+    const positionStyles = [
+        { border: 'border-yellow-400', bg: 'bg-gradient-to-br from-yellow-50 to-yellow-200' },
+        { border: 'border-gray-300', bg: 'bg-gradient-to-br from-gray-50 to-gray-200' },
+        { border: 'border-orange-400', bg: 'bg-gradient-to-br from-orange-50 to-orange-200' },
+    ];
+
     if (!canViewResults) {
         return (
             <div className="max-w-4xl mx-auto">
@@ -96,7 +114,7 @@ function Results() {
 
     return (
         <div className="max-w-7xl mx-auto">
-            <div className="mb-8">
+            <div className="mb-10">
                 <div className="flex flex-wrap gap-4 mb-6">
                     <Badge variant="outline" className="px-3 py-1">
                         <Users className="h-4 w-4 mr-1" />
@@ -114,10 +132,8 @@ function Results() {
                     </Badge>
                 </div>
 
-                {/* Status Messages */}
                 {!hasResults && (
-                    <Alert className="bg-blue-50 border-blue-200 mb-6">
-                        <Clock className="h-4 w-4" />
+                    <Alert className="bg-blue-50 border-blue-200 mb-6 text-center">
                         <AlertDescription>
                             {votingSettings?.isVotingActive
                                 ? 'Voting is still active. These are live results that may change.'
@@ -128,8 +144,7 @@ function Results() {
                 )}
 
                 {hasResults && winners.length > 0 && (
-                    <Alert className="bg-green-50 border-green-200 mb-6">
-                        <Trophy className="h-4 w-4" />
+                    <Alert className="bg-green-50 border-green-200 mb-6 text-center">
                         <AlertDescription>
                             <strong>Winners have been announced!</strong> Congratulations to all participants.
                         </AlertDescription>
@@ -137,7 +152,6 @@ function Results() {
                 )}
             </div>
 
-            {/* Error Display */}
             {error instanceof Error && (
                 <Alert className="bg-red-50 border-red-200 mb-6" variant="destructive">
                     <AlertCircle className="h-4 w-4" />
@@ -155,7 +169,6 @@ function Results() {
                 </Alert>
             )}
 
-            {/* Loading State */}
             {isLoading && photos.length === 0 && (
                 <div className="flex items-center justify-center py-12">
                     <div className="text-center">
@@ -165,46 +178,109 @@ function Results() {
                 </div>
             )}
 
-            {/* Winners Section */}
             {hasResults && winners.length > 0 && (
                 <div className="mb-12">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-                        🏆 Official Winners 🏆
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        {winners.map((winner: Photo) => (
-                            <Card key={winner.id} className="relative overflow-hidden border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
-                                <div className="absolute top-4 left-4 z-10">
-                                    {getPositionBadge(winner.winnerPosition || 1)}
-                                </div>
-
-                                <div className="aspect-square relative overflow-hidden">
-                                    <img
-                                        src={winner.url}
-                                        alt={winner.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
-
-                                <CardContent className="p-6">
-                                    <h3 className="font-bold text-lg mb-2">{winner.name}</h3>
-                                    {winner.participantName && isAdminUser && (
-                                        <p className="text-gray-600 mb-2">
-                                            by {winner.participantName}
-                                        </p>
-                                    )}
-                                    <div className="flex items-center text-lg font-semibold text-blue-600">
-                                        <Heart className="h-5 w-5 mr-1 text-red-500" />
-                                        {winner.voteCount} votes
+                    <div className="flex items-end justify-center gap-4 mb-8">
+                        {winners[1] && (
+                            <div className="w-1/4">
+                                <Card 
+                                    key={winners[1].id} 
+                                    className={`relative overflow-hidden border-2 ${positionStyles[1].border} ${positionStyles[1].bg}`}
+                                >
+                                    <div className="absolute top-4 left-4 z-10">
+                                        {getPositionBadge(2)}
                                     </div>
-                                </CardContent>
-                            </Card>
-                        ))}
+                                    <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => openSlider(winners[1])}>
+                                        <img
+                                            src={winners[1].url}
+                                            alt={winners[1].name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <CardContent className="p-4">
+                                        <h3 className="font-bold text-md mb-2">{winners[1].name}</h3>
+                                        {winners[1].participantName && isAdminUser && (
+                                            <p className="text-gray-600 mb-2 text-sm">
+                                                by {winners[1].participantName}
+                                            </p>
+                                        )}
+                                        <div className="flex items-center text-md font-semibold text-blue-600">
+                                            <Heart className="h-4 w-4 mr-1 text-red-500" />
+                                            {winners[1].voteCount} votes
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+
+                        {winners[0] && (
+                            <div className="w-1/3 transform -translate-y-8">
+                                <Card 
+                                    key={winners[0].id} 
+                                    className={`relative overflow-hidden border-4 ${positionStyles[0].border} ${positionStyles[0].bg} shadow-xl`}
+                                >
+                                    <div className="absolute top-4 left-4 z-10">
+                                        {getPositionBadge(1)}
+                                    </div>
+                                    <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => openSlider(winners[0])}>
+                                        <img
+                                            src={winners[0].url}
+                                            alt={winners[0].name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <CardContent className="p-6">
+                                        <h3 className="font-bold text-xl mb-2">{winners[0].name}</h3>
+                                        {winners[0].participantName && isAdminUser && (
+                                            <p className="text-gray-600 mb-2">
+                                                by {winners[0].participantName}
+                                            </p>
+                                        )}
+                                        <div className="flex items-center text-lg font-semibold text-blue-600">
+                                            <Heart className="h-5 w-5 mr-1 text-red-500" />
+                                            {winners[0].voteCount} votes
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+
+                        {/* 3rd Place */}
+                        {winners[2] && (
+                            <div className="w-1/4">
+                                <Card 
+                                    key={winners[2].id} 
+                                    className={`relative overflow-hidden border-2 ${positionStyles[2].border} ${positionStyles[2].bg}`}
+                                >
+                                    <div className="absolute top-4 left-4 z-10">
+                                        {getPositionBadge(3)}
+                                    </div>
+                                    <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => openSlider(winners[2])}>
+                                        <img
+                                            src={winners[2].url}
+                                            alt={winners[2].name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <CardContent className="p-4">
+                                        <h3 className="font-bold text-md mb-2">{winners[2].name}</h3>
+                                        {winners[2].participantName && isAdminUser && (
+                                            <p className="text-gray-600 mb-2 text-sm">
+                                                by {winners[2].participantName}
+                                            </p>
+                                        )}
+                                        <div className="flex items-center text-md font-semibold text-blue-600">
+                                            <Heart className="h-4 w-4 mr-1 text-red-500" />
+                                            {winners[2].voteCount} votes
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
 
-            {/* All Results */}
             <div>
                 <h2 className="text-xl font-bold text-gray-900 mb-6">
                     {hasResults ? 'Final Standings' : 'Current Standings'}
@@ -213,8 +289,7 @@ function Results() {
                 {photos.length > 0 ? (
                     <div className="space-y-4">
                         {sortedPhotos.map((photo, index) => (
-                            <Card key={photo.id} className={`${photo.isWinner ? 'border-yellow-300 bg-yellow-50' : ''
-                                }`}>
+                            <Card key={photo.id} className={`${photo.isWinner ? 'border-yellow-300 bg-yellow-50' : ''}`}>
                                 <CardContent className="p-6">
                                     <div className="flex items-center gap-6">
                                         <div className="flex-shrink-0 text-center">
@@ -224,7 +299,7 @@ function Results() {
                                             {photo.isWinner && getPositionIcon(photo.winnerPosition || 1)}
                                         </div>
 
-                                        <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                        <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 cursor-pointer" onClick={() => openSlider(photo)}>
                                             <img
                                                 src={photo.url}
                                                 alt={photo.name}
@@ -278,6 +353,19 @@ function Results() {
                     </div>
                 )}
             </div>
+
+            {isSliderOpen && (
+                <PhotoSlider
+                    photos={sortedPhotos}
+                    initialPhotoIndex={selectedPhotoIndex}
+                    isOpen={isSliderOpen}
+                    onClose={() => setIsSliderOpen(false)}
+                    onVote={async () => { toast.info('Voting is closed'); return false; }}
+                    canVote={false}
+                    votingActive={votingActive}
+                    getUserVotedPhotoId={() => null}
+                />
+            )}
         </div>
     );
 }

@@ -65,14 +65,14 @@ export default function PhotoCard({
 
         const positions = [
             { label: '1st Place', color: 'bg-gradient-to-r from-yellow-400 to-yellow-600', icon: '🥇' },
-            { label: '2nd Place', color: 'bg-gradient-to-r from-gray-300 to-gray-500', icon: '🥈' },
+            { label: '2nd Place', color: 'bg-gradient-to-r from-gray-300 to-gray-500', icon: '🥈'  },
             { label: '3rd Place', color: 'bg-gradient-to-r from-orange-400 to-orange-600', icon: '🥉' }
         ];
         const position = photo.winnerPosition ? photo.winnerPosition - 1 : 0;
         const winner = positions[position];
 
         return (
-            <div className={`${winner.color} text-white absolute top-1 left-3 z-10 px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5 text-sm font-semibold`}>
+            <div className={`${winner.color} text-black absolute top-1 left-3 z-10 px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5 text-sm font-semibold`}>
                 <Trophy className="h-4 w-4" />
                 {winner.label}
             </div>

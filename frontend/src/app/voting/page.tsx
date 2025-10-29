@@ -163,9 +163,12 @@ function Voting() {
             }
 
             <PhotoSlider
+                onVote={handleVote}
+                canVote={!!canVote}
                 photos={filteredPhotos}
                 initialPhotoIndex={selectedPhotoIndex}
                 isOpen={sliderOpen}
+                votingActive={votingActive}
                 onClose={closeSlider}
             />
         </div >

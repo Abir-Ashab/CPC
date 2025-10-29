@@ -45,6 +45,7 @@ export class VotingService {
       });
     }
   }
+  
   async getVotingSettings(): Promise<VotingSettingsDocument> {
     let settings = await this.votingSettingsModel.findOne();
     if (!settings) {
@@ -109,7 +110,6 @@ export class VotingService {
       throw new BadRequestException("Voting is not currently active");
     }
 
-    // Check if photo exists
     const photo = await this.photoService.findById(photoId);
     if (!photo) {
       throw new NotFoundException("Photo not found");
@@ -119,30 +119,43 @@ export class VotingService {
       throw new BadRequestException("User authentication required");
     }
 
-    // Check if user has already voted using votedPhotoId
     const currentUser = await this.usersService.findById(user._id.toString());
+
     if (currentUser?.votedPhotoId) {
-      throw new BadRequestException("You have already voted");
+      let previousPhotoId: string;
+      
+      if (typeof currentUser.votedPhotoId === 'object' && currentUser.votedPhotoId._id) {
+        previousPhotoId = currentUser.votedPhotoId._id.toString();
+      } else {
+        previousPhotoId = currentUser.votedPhotoId.toString();
+      }
+      if (previousPhotoId === photoId) {
+        return {
+          success: true,
+          message: "You have already voted for this photo",
+        };
+      }
+      
+      await this.photoService.decrementVoteCount(previousPhotoId);
     }
 
-    // Update user's votedPhotoId and votedAt
     await this.usersService.updateUser(user._id.toString(), {
       votedPhotoId: photoId,
       votedAt: new Date(),
     });
 
-    // Increment photo vote count
     await this.photoService.incrementVoteCount(photoId);
 
     return {
       success: true,
-      message: "Vote recorded successfully",
+      message: currentUser?.votedPhotoId 
+        ? "Vote changed successfully" 
+        : "Vote recorded successfully",
     };
   }
 
   async getUserVote(userId: string): Promise<{ votedPhotoId?: string; votedAt?: Date }> {
     const user = await this.usersService.findById(userId);
-    console.log("user in getUserVote: \n", user);
     return {
       votedPhotoId: user?.votedPhotoId?._id.toString(),
       votedAt: user?.votedAt,
@@ -190,7 +203,7 @@ export class VotingService {
     user: User,
     winnerIds: string[],
   ): Promise<{ success: boolean; message: string }> {
-    if (user.role !== Role.ADMIN && user.email !== "abir.ashab@cefalo.com") {
+    if (user.role !== Role.ADMIN) {
       throw new ForbiddenException("Only admin can declare winners");
     }
 
@@ -242,13 +255,10 @@ export class VotingService {
     );
   }
 
-  // NEW: Reset everything
   async resetVoting(user: User): Promise<{ success: boolean; message: string }> {
     if (user.role !== Role.ADMIN && user.email !== "abir.ashab@cefalo.com") {
       throw new ForbiddenException("Only admin can reset voting");
     }
-
-    // Reset voting settings
     await this.updateVotingSettings(user, {
       isVotingActive: false,
       votingStartTime: null,
@@ -257,10 +267,8 @@ export class VotingService {
       resultsPublished: false,
     });
 
-    // Reset all user votes
     await this.usersService.resetAllVotes();
 
-    // Reset all photo vote counts and winner status
     await this.photoService.resetAllPhotos();
 
     return {

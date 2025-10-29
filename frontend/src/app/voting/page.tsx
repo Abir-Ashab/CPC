@@ -151,6 +151,7 @@ function Voting() {
                                         canVote={!!canVote}
                                         hasUserVoted={hasVoted}
                                         isUserVotedPhoto={photo.id === votedPhotoId}
+                                        votingActive={votingActive}
                                         isLoading={voteMutation.isPending || isLoading}
                                         onClick={() => handlePhotoClick(index)}
                                     />
@@ -158,21 +159,6 @@ function Voting() {
                             </div>
                         )}
                     </>
-                )
-            }
-
-            {
-                photos.length > 0 && (
-                    <div className="mt-12 pt-8 border-t text-center text-gray-500 text-sm">
-                        <p>
-                            {hasVoted
-                                ? `You voted for "${photos.find((p: Photo) => p.id === votedPhotoId)?.name}". Thank you for participating!`
-                                : votingActive
-                                    ? 'Make sure to vote before the voting period ends!'
-                                    : 'Voting is not currently active.'
-                            }
-                        </p>
-                    </div>
                 )
             }
 

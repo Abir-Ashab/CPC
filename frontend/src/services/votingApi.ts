@@ -40,9 +40,7 @@ export const votingApi = {
     },
 
     getUserVote: async (): Promise<UserVote> => {
-        const { data } = await api.get('/voting/my-vote');
-        console.log("data.vote", data);
-        
+        const { data } = await api.get('/voting/my-vote');   
         return data.vote as UserVote;
     },
 

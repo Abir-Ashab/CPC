@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Heart, Trophy, User, Clock, Check, Eye, Award } from 'lucide-react';
+import { Heart, Trophy, User, Clock, Check, Eye, Award, RefreshCw } from 'lucide-react';
 import { Photo } from '@/services/votingApi';
 import { useUser } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -28,20 +28,26 @@ export default function PhotoCard({
     isUserVotedPhoto,
     isLoading = false,
     onClick,
-    votingActive = true
+    votingActive = false
 }: PhotoCardProps) {
     const [isVoting, setIsVoting] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
     const { user } = useUser();
 
     const handleVote = async () => {
-        if (!canVote || isVoting || !votingActive) return;
+        if (isVoting || !votingActive) return;
 
         setIsVoting(true);
         try {
             const success = await onVote(photo.id);
             if (success) {
-                toast.success('Vote cast successfully!');
+                if (hasUserVoted && !isUserVotedPhoto) {
+                    toast.success('Vote changed successfully!');
+                } else if (isUserVotedPhoto) {
+                    toast.info('You have already voted for this photo');
+                } else {
+                    toast.success('Vote cast successfully!');
+                }
             }
         } finally {
             setIsVoting(false);
@@ -148,41 +154,64 @@ export default function PhotoCard({
             </CardContent>
 
             <CardFooter className="p-5 pt-0">
-                {canVote && !hasUserVoted && votingActive ? (
-                    <Button
-                        onClick={handleVote}
-                        disabled={isVoting || isLoading}
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all duration-300"
-                        size="lg"
-                    >
-                        {isVoting ? (
-                            <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                                Submitting Vote...
-                            </>
+                {votingActive ? (
+                    <>
+                        {!hasUserVoted ? (
+                            <Button
+                                onClick={handleVote}
+                                disabled={isVoting || isLoading}
+                                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all duration-300"
+                                size="lg"
+                            >
+                                {isVoting ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                                        Submitting Vote...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Heart className="h-5 w-5 mr-2" />
+                                        Cast Your Vote
+                                    </>
+                                )}
+                            </Button>
                         ) : (
-                            <>
-                                <Heart className="h-5 w-5 mr-2" />
-                                Cast Your Vote
-                            </>
-                        )}
-                    </Button>
-                ) : hasUserVoted ? (
-                    <div className="w-full">
-                        {isUserVotedPhoto ? (
-                            <div className="bg-green-50 border-2 border-green-500 rounded-lg p-1 flex items-center justify-center gap-2">
-                                <span className="text-green-700">You Voted for This Photo</span>
+                            <div className="w-full space-y-2">
+                                {isUserVotedPhoto ? (
+                                    <div className="bg-green-50 border-2 border-green-500 rounded-lg p-3 flex items-center justify-center gap-2">
+                                        <Check className="h-5 w-5 text-green-600" />
+                                        <span className="text-green-700 font-medium">Your Vote</span>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        onClick={handleVote}
+                                        disabled={isVoting || isLoading}
+                                        variant="outline"
+                                        className="w-full border-2 border-blue-500 text-blue-700 hover:bg-blue-50 transition-all duration-300"
+                                        size="lg"
+                                    >
+                                        {isVoting ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-2"></div>
+                                                Changing Vote...
+                                            </>
+                                        ) : (
+                                            votingActive ? (
+                                                <>
+                                                    <RefreshCw className="h-5 w-5 mr-2" />
+                                                    Change Vote
+                                                </>
+                                            ) : null
+                                        )}
+                                    </Button>
+                                )}
                             </div>
-                        ) : (
-                            <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-1 flex items-center justify-center gap-2">
-                                <span className="font-medium text-gray-600">Vote Already Submitted</span>
-                            </div>
                         )}
-                    </div>
+                    </>
                 ) : (
-                    <div className="w-full bg-gray-100 border-2 border-gray-300 rounded-lg p-1 flex items-center justify-center">
+                    <div className="w-full bg-gray-100 border-2 border-gray-300 rounded-lg p-3 flex items-center justify-center">
                         <span className="font-medium text-gray-500">
-                            {votingActive ? 'Vote Now' : 'Voting Period Ended'}
+                            Voting is closed
                         </span>
                     </div>
                 )}

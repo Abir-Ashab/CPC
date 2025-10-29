@@ -31,8 +31,7 @@ export class PhotoService {
     await this.minioService.uploadFile(fileName, file.buffer, file.mimetype);
     const url = await this.minioService.getFileUrl(fileName);
 
-    // Extract category from caption using the helper function
-    const category = participantInfo?.category || extractCategoryFromCaption(participantInfo?.caption || '');
+    const category = extractCategoryFromCaption(file.originalname || '');
 
     const photo = new this.photoModel({
       name: photoName || file.originalname,
@@ -48,7 +47,7 @@ export class PhotoService {
       contentType: file.mimetype,
       size: file.size,
       uploadedAt: new Date(),
-      voteCount: 0, // Initialize vote count
+      voteCount: 0, 
       isWinner: false,
       winnerPosition: undefined,
     });
@@ -99,7 +98,6 @@ export class PhotoService {
     await this.photoModel.findByIdAndDelete(id);
   }
 
-  // New method to increment vote count
   async incrementVoteCount(photoId: string): Promise<Photo | null> {
     return this.photoModel.findByIdAndUpdate(
       photoId,

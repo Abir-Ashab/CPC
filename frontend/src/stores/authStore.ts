@@ -35,7 +35,7 @@ export const useAuthStore = create<AuthState>()(
 
             login: (redirectUrl?: string) => {
                 if (typeof window === 'undefined') return;
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+                const baseUrl = process.env.NEXT_PUBLIC_API_URL;
                 const redirect = redirectUrl || window.location.href;
                 window.location.href = `${baseUrl}/auth/google?redirect=${encodeURIComponent(redirect)}`;
             },

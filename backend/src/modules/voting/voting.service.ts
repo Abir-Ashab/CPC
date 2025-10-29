@@ -142,8 +142,9 @@ export class VotingService {
 
   async getUserVote(userId: string): Promise<{ votedPhotoId?: string; votedAt?: Date }> {
     const user = await this.usersService.findById(userId);
+    console.log("user in getUserVote: \n", user);
     return {
-      votedPhotoId: user?.votedPhotoId?.toString(),
+      votedPhotoId: user?.votedPhotoId?._id.toString(),
       votedAt: user?.votedAt,
     };
   }

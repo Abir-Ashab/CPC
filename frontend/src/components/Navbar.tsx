@@ -13,7 +13,7 @@ import {
 import { useUser } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Camera, Trophy, Settings, LogOut, User, Loader2, Users } from 'lucide-react';
+import { Camera, Trophy, Settings, LogOut, User, Users, Award, Vote } from 'lucide-react';
 import { withAuth } from '@/utils/withAuth';
 
 interface NavLinkProps {
@@ -58,12 +58,12 @@ function NavbarComponent() {
                         </div>
                     </Link>
 
-                    <div className="flex items-center space-x-6">
+                    <div className="flex items-center space-x-6 text-md">
                         <div className="hidden md:flex items-center space-x-2">
-                            <NavLink href="/voting" icon={<Trophy className="h-5 w-4" />}>
+                            <NavLink href="/voting" icon={<Vote className="h-5 w-4" />}>
                                 Voting
                             </NavLink>
-                            <NavLink href="/results">
+                            <NavLink href="/results" icon={<Award className="h-4 w-4" />}>
                                 Results
                             </NavLink>
                             {user?.role === 'ADMIN' && (

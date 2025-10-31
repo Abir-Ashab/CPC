@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { withAuth } from '@/utils/withAuth';
 import Loading from '../loading';
+import SearchBar from '@/components/modules/photo/SearchBar'; 
 
 function Voting() {
     const {
@@ -29,6 +30,7 @@ function Voting() {
     const { isLoading, error, refetch } = usePhotos();
     const voteMutation = useVote();
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
+    const [searchQuery, setSearchQuery] = useState(''); 
     const [sliderOpen, setSliderOpen] = useState(false);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
@@ -40,9 +42,9 @@ function Voting() {
         'Cityscape': 'Cityscape'
     };
 
-    const filteredPhotos = selectedCategory === 'All'
-        ? photos
-        : photos.filter((photo: Photo) => photo.category === selectedCategory);
+    const filteredPhotos = photos
+        .filter((photo: Photo) => selectedCategory === 'All' || photo.category === selectedCategory)
+        .filter((photo: Photo) => photo.caption?.toLowerCase().includes(searchQuery.toLowerCase())); 
 
     const handleVote = async (photoId: string) => {
         try {
@@ -77,7 +79,7 @@ function Voting() {
                     endTime={settings?.votingEndTime} 
                     isActive={votingActive} 
                 />
-                <div className="mb-6 mt-8">
+                <div className="mb-6 mt-4">
                     <div className="flex flex-wrap gap-3 flex items-center justify-center">
                             {categories.map((category) => {
                                 const categoryName = category || 'Unknown';
@@ -95,6 +97,9 @@ function Voting() {
                             })}
                         </div>
                 </div>
+            </div>
+            <div className="mb-6 mt-4 w-full"> 
+                <SearchBar onSearch={setSearchQuery} /> 
             </div>
 
             {
